@@ -166,7 +166,10 @@ def banner(theme: str, narrow: bool) -> Svg:
             f'<circle class="ping" cx="{pxl + 18:.1f}" cy="{py - 5}" r="4" fill="{p["accent2"]}"/>'
             f'<circle cx="{pxl + 18:.1f}" cy="{py - 5}" r="4" fill="{p["accent2"]}"/>'
             + svg.text(pxl + 32, py, label, 'mono-400', pill_size, p['accent2'])
-            + svg.text(pxl + 32 + tw + 12, py, '·', 'mono-400', pill_size, p['muted'])
+            # the dot sits midway between the inks of 's' and 'i', not their advance boxes: in Plex Mono 's' ends
+            # 0.076 em before its box, 'i' starts 0.106 em into its box and '·' is centred in its own box
+            + svg.text(pxl + 32 + tw + 13 + pill_size * (0.106 - 0.076) / 2, py, '·', 'mono-400', pill_size,
+                       p['muted'], anchor='middle')
             + svg.text(pxl + 32 + tw + 26, py, site, 'mono-400', pill_size, p['ink'])
             + '</g>')
     return svg
