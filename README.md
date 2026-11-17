@@ -33,9 +33,3 @@
   <source media="(max-width: 600px)" srcset="assets/activity-dark-narrow.svg">
   <img src="assets/activity-dark.svg" width="100%" alt="Live GitHub activity of Tomasz over the past year: a weekly signal line and a daily heatmap, redrawn every day by GitHub Actions.">
 </picture>
-
-<p align="center">
-<a href="https://insighteo.pl/en/"><img src="assets/button-website.svg" height="48" alt="insighteo.pl"></a>
-<a href="https://www.linkedin.com/in/tlabedzki/"><img src="assets/button-linkedin.svg" height="48" alt="LinkedIn"></a>
-<a href="mailto:tomasz@insighteo.pl"><img src="assets/button-email.svg" height="48" alt="tomasz@insighteo.pl"></a>
-</p>
