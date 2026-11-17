@@ -1,4 +1,4 @@
-"""Static profile graphics: banner, agents terminal, stack modules, career graph, contact buttons.
+"""Static profile graphics: banner, agents terminal, stack modules, career graph.
 
 Every graphic comes in a dark and a light version, the large ones also in a narrow version for phones
 (README.md picks them with <picture>). Texts follow insighteo.pl (src/i18n/content.ts, EN), shortened.
@@ -421,7 +421,7 @@ def career(theme: str, narrow: bool) -> Svg:
     for kind, val in rows:
         if kind == 'commit':
             years, role, head = val
-            lead = years + ('  (HEAD -> now)' if head else '') + '  '
+            lead = years + ('  (currently)' if head else '') + '  '
             first_w = text_w - width(lead, 'mono-600', size)
             lines = wrap(role, 'mono-600', size, first_w if not narrow else text_w)
             if narrow:
@@ -464,8 +464,8 @@ def career(theme: str, narrow: bool) -> Svg:
             parts = [svg.text(tx, y, years, 'mono-600', size, p['amber'])]
             xx = tx + width(years + '  ', 'mono-600', size)
             if head:
-                parts.append(svg.text(xx, y, '(HEAD -> now)', 'mono-600', size, p['pink']))
-                xx += width('(HEAD -> now)  ', 'mono-600', size)
+                parts.append(svg.text(xx, y, '(currently)', 'mono-600', size, p['pink']))
+                xx += width('(currently)  ', 'mono-600', size)
             if role:
                 parts.append(svg.text(xx, y, role, 'mono-600', size, p['ink']))
             svg.add(f'<g class="up" style="{st}">{"".join(parts)}</g>')
@@ -508,51 +508,7 @@ def career(theme: str, narrow: bool) -> Svg:
     return svg
 
 
-# ---- 6. contact buttons ------------------------------------------------------------------------------------------
-
-def glyph_icon(kind: str, x: float, y: float, s: float, c: str) -> str:
-    sw = 1.8
-    if kind == 'web':
-        r = s / 2
-        cx, cy = x + r, y + r
-        return (f'<g stroke="{c}" stroke-width="{sw}" fill="none"><circle cx="{cx}" cy="{cy}" r="{r - 1}"/>'
-                f'<ellipse cx="{cx}" cy="{cy}" rx="{r * 0.42:.1f}" ry="{r - 1}"/>'
-                f'<path d="M{x + 1} {cy}H{x + s - 1}M{x + 3} {cy - r * 0.5:.1f}H{x + s - 3}M{x + 3} {cy + r * 0.5:.1f}H{x + s - 3}"/></g>')
-    if kind == 'in':
-        return (f'<rect x="{x + 1}" y="{y + 1}" width="{s - 2}" height="{s - 2}" rx="4" stroke="{c}" stroke-width="{sw}"/>'
-                f'<g fill="{c}"><circle cx="{x + s * 0.3:.1f}" cy="{y + s * 0.3:.1f}" r="{s * 0.075:.1f}"/>'
-                f'<rect x="{x + s * 0.23:.1f}" y="{y + s * 0.42:.1f}" width="{s * 0.14:.1f}" height="{s * 0.36:.1f}"/></g>'
-                f'<path d="M{x + s * 0.48:.1f} {y + s * 0.78:.1f}V{y + s * 0.42:.1f}M{x + s * 0.48:.1f} {y + s * 0.56:.1f}'
-                f'c0-0.1 {s * 0.06:.1f}-{s * 0.15:.1f} {s * 0.15:.1f}-{s * 0.15:.1f}s{s * 0.15:.1f} {s * 0.05:.1f} '
-                f'{s * 0.15:.1f} {s * 0.15:.1f}V{y + s * 0.78:.1f}" stroke="{c}" stroke-width="{s * 0.13:.1f}"/>')
-    return (f'<g stroke="{c}" stroke-width="{sw}" fill="none" stroke-linejoin="round"><rect x="{x + 1}" y="{y + s * 0.18:.1f}" '
-            f'width="{s - 2}" height="{s * 0.64:.1f}" rx="3"/><path d="M{x + 2} {y + s * 0.24:.1f}l{s / 2 - 2:.1f} '
-            f'{s * 0.32:.1f}l{s / 2 - 2:.1f} {-s * 0.32:.1f}"/></g>')
-
-
-BUTTONS = [('website', 'web', 'insighteo.pl'), ('linkedin', 'in', 'LinkedIn'), ('email', 'mail', 'tomasz@insighteo.pl')]
-
-
-def button(theme: str, kind: str, label: str) -> Svg:
-    size = 16
-    iw = 20
-    W = 18 + iw + 12 + width(label, 'mono-600', size) + 22
-    H = 48
-    svg = Svg(round(W), H, theme, label)
-    p = svg.p
-    svg.add(f'<rect x="1" y="1" width="{W - 2:.1f}" height="{H - 2}" rx="10" fill="{p["panel"]}" stroke="{p["accent"]}" '
-            f'stroke-opacity="0.55" stroke-width="1.5"/>',
-            glyph_icon(kind, 18, (H - iw) / 2, iw, p['accent']),
-            svg.text(18 + iw + 12, H / 2 + size * 0.36, label, 'mono-600', size, p['ink']))
-    return svg
-
-
 # ---- README ------------------------------------------------------------------------------------------------------
-
-SITE = 'https://insighteo.pl/en/'
-LINKEDIN = 'https://www.linkedin.com/in/tlabedzki/'
-EMAIL = 'mailto:tomasz@insighteo.pl'
-
 
 def picture(name: str, alt: str) -> str:
     """Theme and width variants. GitHub sets prefers-color-scheme from the GitHub theme; narrow = phones.
@@ -565,26 +521,18 @@ def picture(name: str, alt: str) -> str:
             f'</picture>')
 
 
-def button_md(name: str, label: str, href: str) -> str:
-    """One dark version that reads on both themes: GitHub moves an <img> out of a linked <picture>
-    (checked with the Markdown API), so a theme switch would break the link."""
-    return f'<a href="{href}"><img src="assets/button-{name}.svg" height="48" alt="{esc(label)}"></a>'
-
-
 def readme() -> str:
     alts = {n: fn('dark', False).title for n, fn in (('banner', banner), ('agents', agents), ('stack', stack),
                                                        ('career', career))}
     activity_alt = ('Live GitHub activity of Tomasz over the past year: a weekly signal line and a daily heatmap, '
                     'redrawn every day by GitHub Actions.')
-    links = '\n'.join(button_md(n, label, href) for (n, _, label), href in zip(BUTTONS, (SITE, LINKEDIN, EMAIL)))
     return (
         '<!-- Generated by scripts/build.py. Edit the script, not this file. -->\n'
         f'{picture("banner", alts["banner"])}\n\n'
         f'{picture("agents", alts["agents"])}\n\n'
         f'{picture("stack", alts["stack"])}\n\n'
         f'{picture("career", alts["career"])}\n\n'
-        f'{picture("activity", activity_alt)}\n\n'
-        f'<p align="center">\n{links}\n</p>\n'
+        f'{picture("activity", activity_alt)}\n'
     )
 
 
@@ -596,9 +544,6 @@ def main() -> None:
             for name, fn in (('banner', banner), ('agents', agents), ('stack', stack), ('career', career)):
                 path = fn(theme, narrow).save(f'{name}-{suffix}.svg')
                 print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
-    for name, kind, label in BUTTONS:
-        path = button('dark', kind, label).save(f'button-{name}.svg')
-        print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
 
 
 if __name__ == '__main__':
