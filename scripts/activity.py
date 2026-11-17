@@ -1,7 +1,7 @@
 """Live part of the profile: GitHub activity over the past year, redrawn daily by GitHub Actions.
 
 Reads the public contribution calendar through the GraphQL API (GITHUB_TOKEN in Actions is enough) and draws
-it in the insighteo.pl style: a weekly signal line and a daily heatmap, dark and light, wide and narrow.
+it in the insighteo.pl style: a weekly signal line and a daily heatmap, dark only (in every GitHub theme), wide and narrow.
 No figures on the graphic (rule from insighteo.pl): only the shape of the activity and month names.
 
 Usage:
@@ -129,7 +129,7 @@ def draw(weeks, theme: str, narrow: bool) -> Svg:
     fill = svg.uid('area')
     svg.defs.append(f'<linearGradient id="{fill}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{p["accent"]}" '
                     f'stop-opacity="0.45"/><stop offset="1" stop-color="{p["accent"]}" stop-opacity="0"/></linearGradient>')
-    halo = svg.text_glow(5 if theme == 'dark' else 2)
+    halo = svg.text_glow(5)
     base = chart_top + chart_h
     svg.add(f'<path class="area" d="{line}L{pts[-1][0]:.1f} {base:.1f}L{pts[0][0]:.1f} {base:.1f}Z" fill="url(#{fill})"/>',
             f'<path class="draw" pathLength="1" d="{line}" stroke="{p["accent"]}" stroke-width="2.5" '
@@ -184,7 +184,7 @@ def main() -> None:
     else:
         data = fetch()
     weeks = weeks_from(data)
-    for theme in ('dark', 'light'):
+    for theme in ('dark',):  # dark only, see svgkit.PALETTES
         for narrow in (False, True):
             path = draw(weeks, theme, narrow).save(f'activity-{theme}{"-narrow" if narrow else ""}.svg')
             print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')

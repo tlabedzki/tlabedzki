@@ -1,7 +1,7 @@
 """Static profile graphics: banner, agents terminal, stack modules, career graph.
 
-Every graphic comes in a dark and a light version, the large ones also in a narrow version for phones
-(README.md picks them with <picture>). Texts follow insighteo.pl (src/i18n/content.ts, EN), shortened.
+Every graphic is dark only, in every GitHub theme, plus a narrow version for phones (README.md picks it
+with <picture> by width only, never by theme). Texts follow insighteo.pl (src/i18n/content.ts, EN), shortened.
 Rules from insighteo.pl: no employer or client names, no figures for results, no "—" or "–".
 
 Usage: python scripts/build.py
@@ -13,7 +13,7 @@ import random
 from icons import ICONS
 from svgkit import ROOT, Svg, esc, width, wrap
 
-THEMES = ('dark', 'light')
+THEMES = ('dark',)  # dark only, see svgkit.PALETTES
 NAME = 'Tomasz Łabędzki'
 ROLE = 'Analytics Engineer · AI Engineer · Data Analyst'
 TAGLINE = 'I build tools that turn data into decisions.'
@@ -136,7 +136,7 @@ def banner(theme: str, narrow: bool) -> Svg:
     tag, t_end, _ = typed(svg, px, ys[0], prompt, 'mono-400', prompt_size, p['accent'], 0.3, 0.03)
     svg.add(tag)
     # name typed glyph by glyph, caret follows
-    halo = svg.text_glow(10 if theme == 'dark' else 4)
+    halo = svg.text_glow(10)
     nx = cx - width(NAME, 'sans-600', name_size) / 2
     start, step = t_end + 0.35, 0.085
     tag, n_end, xs = typed(svg, nx, ys[1], NAME, 'sans-600', name_size, p['ink'], start, step,
@@ -244,7 +244,7 @@ def agents(theme: str, narrow: bool) -> Svg:
         svg.add(f'<g class="up" style="animation-delay:{t_show:.2f}s">{"".join(g)}</g>')
     t_end = t + 0.45 + (len(AGENTS) - 1) * 0.32 + 1.1 + (len(AGENTS) - 1) * 0.12 + 0.35
     # outcome lines
-    halo = svg.text_glow(6 if theme == 'dark' else 2)
+    halo = svg.text_glow(6)
     ty += lh * 1.25
     deliver = 'deliver: from a conversation about the problem to a deployed tool'
     lines = wrap(deliver, 'mono-400', size, w - pad * 2 - cw * 2)
@@ -511,11 +511,9 @@ def career(theme: str, narrow: bool) -> Svg:
 # ---- README ------------------------------------------------------------------------------------------------------
 
 def picture(name: str, alt: str) -> str:
-    """Theme and width variants. GitHub sets prefers-color-scheme from the GitHub theme; narrow = phones.
-    Order matters: if a combined query ever fails, the next source is still a sensible fallback."""
+    """Width variants only: narrow = phones. No prefers-color-scheme source: it follows the OS, not the GitHub
+    theme, so a dark GitHub theme on a light OS got the light graphics (zlecenie 317)."""
     return (f'<picture>\n'
-            f'  <source media="(prefers-color-scheme: light) and (max-width: 600px)" srcset="assets/{name}-light-narrow.svg">\n'
-            f'  <source media="(prefers-color-scheme: light)" srcset="assets/{name}-light.svg">\n'
             f'  <source media="(max-width: 600px)" srcset="assets/{name}-dark-narrow.svg">\n'
             f'  <img src="assets/{name}-dark.svg" width="100%" alt="{esc(alt)}">\n'
             f'</picture>')
