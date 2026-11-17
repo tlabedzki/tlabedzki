@@ -366,7 +366,7 @@ def stack(theme: str, narrow: bool) -> Svg:
 # ---- 4. career graph ---------------------------------------------------------------------------------------------
 
 CAREER = [
-    ('2024 - now', 'Analytics Engineer', True, [
+    ('2024 - currently', 'Analytics Engineer', True, [
         'data pipelines and an analysis-ready warehouse (Python, SQL, Airflow, dbt)',
         'a pricing algorithm for multiple European markets',
         'profitability monitoring with costs down to product level',
@@ -421,7 +421,7 @@ def career(theme: str, narrow: bool) -> Svg:
     for kind, val in rows:
         if kind == 'commit':
             years, role, head = val
-            lead = years + ('  (currently)' if head else '') + '  '
+            lead = years + '  '
             first_w = text_w - width(lead, 'mono-600', size)
             lines = wrap(role, 'mono-600', size, first_w if not narrow else text_w)
             if narrow:
@@ -463,9 +463,6 @@ def career(theme: str, narrow: bool) -> Svg:
             y_last = y
             parts = [svg.text(tx, y, years, 'mono-600', size, p['amber'])]
             xx = tx + width(years + '  ', 'mono-600', size)
-            if head:
-                parts.append(svg.text(xx, y, '(currently)', 'mono-600', size, p['pink']))
-                xx += width('(currently)  ', 'mono-600', size)
             if role:
                 parts.append(svg.text(xx, y, role, 'mono-600', size, p['ink']))
             svg.add(f'<g class="up" style="{st}">{"".join(parts)}</g>')
