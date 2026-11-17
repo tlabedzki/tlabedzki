@@ -78,7 +78,7 @@ def rain(svg: Svg, x: float, y: float, w: float, h: float, *, size: float = 15, 
         spans = []
         for k in range(n):
             head = k == n - 1
-            op = 0.95 if head else (k + 1) / n * p['rain_opacity']
+            op = p['rain_head_opacity'] if head else (k + 1) / n * p['rain_opacity']
             color = p['rain_head'] if head else p['rain']
             spans.append(f'<tspan x="{cx:.0f}" y="{k * lh:.0f}" fill="{color}" opacity="{op:.2f}">'
                          f'{esc(rnd.choice(glyphs))}</tspan>')
@@ -135,11 +135,11 @@ def banner(theme: str, narrow: bool) -> Svg:
     tag, t_end, _ = typed(svg, px, ys[0], prompt, 'mono-400', prompt_size, p['accent'], 0.3, 0.03)
     svg.add(tag)
     # name typed glyph by glyph, caret follows
-    halo = svg.text_glow(10 if theme == 'dark' else 4)
+    halo = svg.text_glow(10)
     nx = cx - width(NAME, 'sans-600', name_size) / 2
     start, step = t_end + 0.35, 0.085
     tag, n_end, xs = typed(svg, nx, ys[1], NAME, 'sans-600', name_size, p['ink'], start, step,
-                           extra=f' filter="url(#{halo})" letter-spacing="0"')
+                           extra=f'{halo} letter-spacing="0"')
     svg.add(tag, caret(svg, nx, ys[1], name_size * 0.95, xs, start, step, p['accent'], w=4 if not narrow else 3))
     # role and tagline
     svg.add(svg.text(cx, ys[2], ROLE, 'mono-400', role_size, p['accent'], anchor='middle', cls='up',
@@ -243,13 +243,13 @@ def agents(theme: str, narrow: bool) -> Svg:
         svg.add(f'<g class="up" style="animation-delay:{t_show:.2f}s">{"".join(g)}</g>')
     t_end = t + 0.45 + (len(AGENTS) - 1) * 0.32 + 1.1 + (len(AGENTS) - 1) * 0.12 + 0.35
     # outcome lines
-    halo = svg.text_glow(6 if theme == 'dark' else 2)
+    halo = svg.text_glow(6)
     ty += lh * 1.25
     deliver = 'deliver: from a conversation about the problem to a deployed tool'
     lines = wrap(deliver, 'mono-400', size, w - pad * 2 - cw * 2)
     g = [svg.arrow(tx, ty, size, p['bright'])]
     for k, line in enumerate(lines):
-        g.append(svg.text(tx + cw * 2, ty + k * lh, line, 'mono-600', size, p['bright'], extra=f' filter="url(#{halo})"'))
+        g.append(svg.text(tx + cw * 2, ty + k * lh, line, 'mono-600', size, p['bright'], extra=halo))
     svg.add(f'<g class="up" style="animation-delay:{t_end:.2f}s">{"".join(g)}</g>')
     ty += lh * len(lines)
     svg.add(f'<g class="up" style="animation-delay:{t_end + 0.3:.2f}s">'
