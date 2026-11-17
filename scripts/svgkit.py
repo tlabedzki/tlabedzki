@@ -4,6 +4,12 @@ Style: insighteo.pl "command center" (near-black screen, teal accent, terminals,
 GitHub shows the graphics through <img>: no JS, no external fonts, so fonts are embedded as WOFF2 data URIs
 (subsets made by scripts/subset_fonts.py) and all motion is CSS inside the SVG.
 
+Theme rule: every file holds both palettes and picks one with @media (prefers-color-scheme) inside the SVG
+(save_themed). In an <img>, Chrome answers that query with the used color-scheme of the <img>, and GitHub sets
+color-scheme from the theme it actually paints (also "sync with system" with a dark day theme). A <source media>
+in the README would follow the OS instead, and GitHub's own switches (<themed-picture>, #gh-dark-mode-only)
+only look at data-color-mode, so they miss that case (zlecenie 319). Without prefers-color-scheme: dark.
+
 Motion rule: the base styles are the final state and animations only lead into it (fill-mode both), so
 @media (prefers-reduced-motion: reduce) can switch every animation off and leave the finished picture.
 
@@ -121,8 +127,9 @@ class Svg:
         self._ids = 0
 
     def uid(self, prefix: str) -> str:
+        """Unique id; the theme letter keeps ids apart when save_themed puts both themes in one file."""
         self._ids += 1
-        return f'{prefix}{self._ids}'
+        return f'{prefix}{self.theme[0]}{self._ids}'
 
     def font(self, face: str) -> str:
         self.fonts.add(face)
@@ -141,22 +148,10 @@ class Svg:
                 f' fill="{fill}"{extra}>{esc(s)}</text>')
 
     def render(self) -> str:
-        p = self.p
-        fonts = ''.join(_font_face(f) for f in sorted(self.fonts))
-        css = ''.join(self.css)
-        reduce = '@media (prefers-reduced-motion: reduce){*{animation:none!important}}'
-        return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {self.w:g} {self.h:g}" width="{self.w:g}" '
-                f'height="{self.h:g}" role="img" aria-labelledby="title" fill="none">'
-                f'<title id="title">{esc(self.title)}</title>'
-                f'<style>{fonts}{css}{reduce}</style>'
-                f'<defs>{"".join(self.defs)}</defs>'
-                f'{"".join(self.body)}</svg>\n')
+        return _render(self, [self])
 
     def save(self, name: str) -> Path:
-        ASSETS.mkdir(exist_ok=True)
-        path = ASSETS / name
-        path.write_text(self.render(), encoding='utf-8')
-        return path
+        return _write(name, self.render())
 
     # ---- shared pieces -------------------------------------------------------------------------------------------
 
@@ -222,3 +217,40 @@ class Svg:
             dots.append(f'<circle class="spin" style="animation-delay:{k * 0.12:.2f}s" cx="{x + s * 0.18 + cx * dx:.1f}" '
                         f'cy="{y - s * 0.62 + cy * dy:.1f}" r="{r:.1f}" fill="{color}"/>')
         return f'<g{extra}>{"".join(dots)}</g>'
+
+
+# ---- writing -----------------------------------------------------------------------------------------------------
+
+# Dark is the default; light only when the <img> (or the OS, where the browser has nothing better) says light.
+THEME_SWITCH = ('.theme-light{display:none}'
+                '@media (prefers-color-scheme: light){.theme-dark{display:none}.theme-light{display:inline}}')
+
+
+def _render(head: Svg, parts: list[Svg]) -> str:
+    fonts = ''.join(_font_face(f) for f in sorted(set().union(*(s.fonts for s in parts))))
+    css = ''.join(dict.fromkeys(c for s in parts for c in s.css))  # shared rules (BASE_CSS) only once
+    reduce = '@media (prefers-reduced-motion: reduce){*{animation:none!important}}'
+    if len(parts) == 1:
+        body = ''.join(head.body)
+    else:
+        css += THEME_SWITCH
+        body = ''.join(f'<g class="theme-{s.theme}">{"".join(s.body)}</g>' for s in parts)
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {head.w:g} {head.h:g}" width="{head.w:g}" '
+            f'height="{head.h:g}" role="img" aria-labelledby="title" fill="none">'
+            f'<title id="title">{esc(head.title)}</title>'
+            f'<style>{fonts}{css}{reduce}</style>'
+            f'<defs>{"".join(d for s in parts for d in s.defs)}</defs>'
+            f'{body}</svg>\n')
+
+
+def _write(name: str, text: str) -> Path:
+    ASSETS.mkdir(exist_ok=True)
+    path = ASSETS / name
+    path.write_text(text, encoding='utf-8')
+    return path
+
+
+def save_themed(name: str, dark: Svg, light: Svg) -> Path:
+    """One file, both themes (see "Theme rule" at the top). Same size and title expected from both."""
+    assert (dark.theme, light.theme) == ('dark', 'light') and (dark.w, dark.h) == (light.w, light.h)
+    return _write(name, _render(dark, [dark, light]))

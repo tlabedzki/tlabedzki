@@ -1,7 +1,7 @@
 """Static profile graphics: banner, agents terminal, stack modules, career graph.
 
-Every graphic comes in a dark and a light version, the large ones also in a narrow version for phones
-(README.md picks them with <picture>). Texts follow insighteo.pl (src/i18n/content.ts, EN), shortened.
+Every graphic is one SVG with a dark and a light version inside (svgkit.save_themed: the SVG follows the theme
+GitHub paints), plus a narrow file for phones (README.md picks it with <picture> by width only). Texts follow insighteo.pl (src/i18n/content.ts, EN), shortened.
 Rules from insighteo.pl: no employer or client names, no figures for results, no "—" or "–".
 
 Usage: python scripts/build.py
@@ -11,9 +11,8 @@ from __future__ import annotations
 import random
 
 from icons import ICONS
-from svgkit import ROOT, Svg, esc, width, wrap
+from svgkit import ROOT, Svg, esc, save_themed, width, wrap
 
-THEMES = ('dark', 'light')
 NAME = 'Tomasz Łabędzki'
 ROLE = 'Analytics Engineer · AI Engineer · Data Analyst'
 TAGLINE = 'I build tools that turn data into decisions.'
@@ -511,13 +510,11 @@ def career(theme: str, narrow: bool) -> Svg:
 # ---- README ------------------------------------------------------------------------------------------------------
 
 def picture(name: str, alt: str) -> str:
-    """Theme and width variants. GitHub sets prefers-color-scheme from the GitHub theme; narrow = phones.
-    Order matters: if a combined query ever fails, the next source is still a sensible fallback."""
+    """Width variants only (narrow = phones). The theme is picked inside each SVG, never here: a <source> with
+    prefers-color-scheme follows the OS, not the GitHub theme (zlecenie 319, see svgkit)."""
     return (f'<picture>\n'
-            f'  <source media="(prefers-color-scheme: light) and (max-width: 600px)" srcset="assets/{name}-light-narrow.svg">\n'
-            f'  <source media="(prefers-color-scheme: light)" srcset="assets/{name}-light.svg">\n'
-            f'  <source media="(max-width: 600px)" srcset="assets/{name}-dark-narrow.svg">\n'
-            f'  <img src="assets/{name}-dark.svg" width="100%" alt="{esc(alt)}">\n'
+            f'  <source media="(max-width: 600px)" srcset="assets/{name}-narrow.svg">\n'
+            f'  <img src="assets/{name}.svg" width="100%" alt="{esc(alt)}">\n'
             f'</picture>')
 
 
@@ -538,12 +535,10 @@ def readme() -> str:
 
 def main() -> None:
     (ROOT / 'README.md').write_text(readme(), encoding='utf-8')
-    for theme in THEMES:
-        for narrow in (False, True):
-            suffix = f'{theme}{"-narrow" if narrow else ""}'
-            for name, fn in (('banner', banner), ('agents', agents), ('stack', stack), ('career', career)):
-                path = fn(theme, narrow).save(f'{name}-{suffix}.svg')
-                print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
+    for narrow in (False, True):
+        for name, fn in (('banner', banner), ('agents', agents), ('stack', stack), ('career', career)):
+            path = save_themed(f'{name}{"-narrow" if narrow else ""}.svg', fn('dark', narrow), fn('light', narrow))
+            print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
 
 
 if __name__ == '__main__':
