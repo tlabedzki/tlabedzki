@@ -130,11 +130,11 @@ def draw(weeks, theme: str, narrow: bool) -> Svg:
     fill = svg.uid('area')
     svg.defs.append(f'<linearGradient id="{fill}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{p["accent"]}" '
                     f'stop-opacity="0.45"/><stop offset="1" stop-color="{p["accent"]}" stop-opacity="0"/></linearGradient>')
-    halo = svg.text_glow(5 if theme == 'dark' else 2)
+    halo = svg.text_glow(5)
     base = chart_top + chart_h
     svg.add(f'<path class="area" d="{line}L{pts[-1][0]:.1f} {base:.1f}L{pts[0][0]:.1f} {base:.1f}Z" fill="url(#{fill})"/>',
             f'<path class="draw" pathLength="1" d="{line}" stroke="{p["accent"]}" stroke-width="2.5" '
-            f'stroke-linecap="round" filter="url(#{halo})"/>')
+            f'stroke-linecap="round"{halo}/>')
     lx, ly = pts[-1]
     svg.add(f'<circle class="ping" cx="{lx:.1f}" cy="{ly:.1f}" r="5" fill="{p["accent"]}"/>',
             f'<circle class="in" style="animation-delay:2.8s" cx="{lx:.1f}" cy="{ly:.1f}" r="4.5" fill="{p["bright"]}"/>')
