@@ -30,12 +30,12 @@ BASE_CSS = (
 
 
 def typed(svg: Svg, x: float, y: float, s: str, face: str, size: float, fill: str, start: float, step: float,
-          *, extra: str = '') -> tuple[str, float, list[float]]:
+          *, extra: str = '', cls: str = 'in') -> tuple[str, float, list[float]]:
     """Text revealed glyph by glyph. Returns markup, end time and the x after every glyph (for a caret)."""
     out, cx, xs = [], x, []
     for i, ch in enumerate(s):
         if ch != ' ':
-            out.append(f'<tspan x="{cx:.1f}" class="in" style="animation-delay:{start + i * step:.2f}s">{esc(ch)}</tspan>')
+            out.append(f'<tspan x="{cx:.1f}" class="{cls}" style="animation-delay:{start + i * step:.2f}s">{esc(ch)}</tspan>')
         cx += width(ch, face, size)
         xs.append(cx)
     tag = (f'<text y="{y:.1f}" style="{svg.font(face)};font-size:{size}px" fill="{fill}"{extra}>'
@@ -43,17 +43,50 @@ def typed(svg: Svg, x: float, y: float, s: str, face: str, size: float, fill: st
     return tag, start + len(s) * step, xs
 
 
+# Soft typing of the banner (zlecenie 330): every glyph of the name rises out of a light blur and overlaps the
+# previous one, so the name flows in instead of popping. Blur and lift in em, so both banner widths look alike.
+# CSS filter on SVG <text> works in <img> in Chrome and Firefox; <tspan> takes neither filter nor transform,
+# hence one <text> per glyph. The prompt only fades, glyph by glyph.
+SOFT_CSS = (
+    '@keyframes soft{from{opacity:0;filter:blur(.12em);transform:translateY(.1em)}'
+    'to{opacity:1;filter:blur(0);transform:none}}'
+    '.soft{animation:soft .4s cubic-bezier(.25,.6,.3,1) both}'
+    '.fade{animation:in .18s ease-out both}'
+)
+SOFT_FADE = 0.4  # seconds a glyph of the name takes to settle
+
+
+def typed_soft(svg: Svg, x: float, y: float, s: str, face: str, size: float, fill: str, start: float, step: float,
+               *, extra: str = '') -> tuple[str, float, list[float]]:
+    """Like typed(), but each glyph is its own <text> that flows in (class soft). Same return values."""
+    out, cx, xs = [], x, []
+    for i, ch in enumerate(s):
+        if ch != ' ':
+            out.append(f'<text x="{cx:.1f}" y="{y:.1f}" class="soft" style="animation-delay:{start + i * step:.2f}s">'
+                       f'{esc(ch)}</text>')
+        cx += width(ch, face, size)
+        xs.append(cx)
+    tag = f'<g style="{svg.font(face)};font-size:{size}px" fill="{fill}"{extra}>{"".join(out)}</g>'
+    return tag, start + len(s) * step, xs
+
+
 def caret(svg: Svg, x0: float, y: float, h: float, xs: list[float], start: float, step: float, color: str,
-          w: float = 3) -> str:
-    """Caret that follows typed text, then blinks. Without motion it rests after the last glyph."""
+          w: float = 2, opacity: float = 0.7, hold: float = 1.6, fade: float = 1.4) -> str:
+    """Thin translucent caret: fades in at the first glyph, glides behind the typed text, rests a moment and
+    slowly fades out. Its base state is the end: invisible, so without motion there is no caret."""
     name = svg.uid('caret')
     n = len(xs)
     frames = ''.join(f'{(i + 1) / n * 100:.2f}%{{transform:translateX({xs[i] - x0:.1f}px)}}' for i in range(n))
+    lead = 0.25
+    total = lead + n * step + hold + fade
+    a, b = lead / total * 100, (lead + n * step + hold) / total * 100
     svg.css.append(f'@keyframes {name}{{0%{{transform:translateX(0)}}{frames}}}'
-                   f'.{name}{{transform:translateX({xs[-1] - x0 + 4:.1f}px);'
-                   f'animation:{name} {n * step:.2f}s step-end {start:.2f}s backwards,'
-                   f'blink 1.1s step-end {start + n * step:.2f}s infinite}}')
-    return f'<rect class="{name}" x="{x0 + 2:.1f}" y="{y - h * 0.8:.1f}" width="{w}" height="{h:.1f}" fill="{color}"/>'
+                   f'@keyframes {name}o{{0%{{opacity:0}}{a:.2f}%,{b:.2f}%{{opacity:{opacity}}}100%{{opacity:0}}}}'
+                   f'.{name}{{opacity:0;transform:translateX({xs[-1] - x0:.1f}px);'
+                   f'animation:{name} {n * step:.2f}s linear {start:.2f}s both,'
+                   f'{name}o {total:.2f}s ease-in-out {start - lead:.2f}s both}}')
+    return (f'<rect class="{name}" x="{x0 + w + 1:.1f}" y="{y - h * 0.8:.1f}" width="{w}" height="{h:.1f}" '
+            f'rx="{w / 2:g}" fill="{color}"/>')
 
 
 def rain(svg: Svg, x: float, y: float, w: float, h: float, *, size: float = 15, gap: float = 22,
@@ -102,6 +135,7 @@ def banner(theme: str, narrow: bool) -> Svg:
     svg = Svg(W, H, theme, f'{NAME}: {ROLE}. {TAGLINE}')
     p = svg.p
     svg.css.append(BASE_CSS)
+    svg.css.append(SOFT_CSS)
     x, y, w, h = 12, 12, W - 24, H - 30
     svg.panel(x, y, w, h, rx=16)
     svg.add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" fill="{p["bg"]}"/>')
@@ -132,15 +166,17 @@ def banner(theme: str, narrow: bool) -> Svg:
     # prompt line
     prompt = 'insighteo@command-center:~$ whoami'
     px = cx - width(prompt, 'mono-400', prompt_size) / 2
-    tag, t_end, _ = typed(svg, px, ys[0], prompt, 'mono-400', prompt_size, p['accent'], 0.3, 0.03)
+    tag, t_end, _ = typed(svg, px, ys[0], prompt, 'mono-400', prompt_size, p['accent'], 0.3, 0.03, cls='fade')
     svg.add(tag)
-    # name typed glyph by glyph, caret follows
+    # name flows in glyph by glyph, a soft caret glides behind it
     halo = svg.text_glow(10)
     nx = cx - width(NAME, 'sans-600', name_size) / 2
     start, step = t_end + 0.35, 0.085
-    tag, n_end, xs = typed(svg, nx, ys[1], NAME, 'sans-600', name_size, p['ink'], start, step,
-                           extra=f'{halo} letter-spacing="0"')
-    svg.add(tag, caret(svg, nx, ys[1], name_size * 0.95, xs, start, step, p['accent'], w=4 if not narrow else 3))
+    tag, n_end, xs = typed_soft(svg, nx, ys[1], NAME, 'sans-600', name_size, p['name'], start, step,
+                                extra=f'{halo} letter-spacing="0"')
+    svg.add(tag, caret(svg, nx, ys[1], name_size * 0.9, xs, start, step, p['accent'], w=1.5 if narrow else 2,
+                       opacity=p['caret_opacity']))
+    n_end += SOFT_FADE - step  # the last glyph settles, then the role comes in
     # role and tagline
     svg.add(svg.text(cx, ys[2], ROLE, 'mono-400', role_size, p['accent'], anchor='middle', cls='up',
                      style=f'animation-delay:{n_end + 0.2:.2f}s'))
