@@ -27,7 +27,7 @@ FONTS = ROOT / 'fonts'
 ASSETS = ROOT / 'assets'
 METRICS = json.loads((FONTS / 'metrics.json').read_text(encoding='utf-8'))
 
-# Palette 7a from insighteo.pl (src/styles/global.css) and its light counterpart.
+# Palette 7a from insighteo.pl (src/styles/global.css) and a light palette for GitHub's light themes.
 PALETTES = {
     'dark': {
         'page': '#0d1117',
@@ -48,30 +48,37 @@ PALETTES = {
         'rain': '#2dd4bf',
         'rain_head': '#ccfbf1',
         'rain_opacity': 0.8,
+        'rain_head_opacity': 0.95,
         'glow': 0.35,
+        'text_glow': True,
         'veil': '#000502',
     },
+    # Light: GitHub's own light colors (Primer: canvas, borders, fg default/muted, success) with one teal accent
+    # from insighteo.pl, darkened for contrast. No glow and no warm colors: on white a glow blurs the text and
+    # amber/pink clash with GitHub (zlecenie 323). Text contrast at least 4.5:1 (WCAG AA) on panel and bg.
     'light': {
         'page': '#ffffff',
-        'bg': '#f2fbf8',
-        'panel': '#fbfefd',
-        'bar': '#e8f7f3',
-        'line': 'rgba(13,148,136,0.32)',
-        'line_soft': 'rgba(13,148,136,0.16)',
-        'ink': '#042f2e',
-        'text': '#115e59',
-        'soft': '#2f514c',
-        'muted': '#56746f',
-        'accent': '#0d9488',
-        'accent2': '#15803d',
-        'amber': '#b45309',
-        'pink': '#be185d',
+        'bg': '#f6f8fa',
+        'panel': '#ffffff',
+        'bar': '#f6f8fa',
+        'line': '#d1d9e0',
+        'line_soft': '#e1e6eb',
+        'ink': '#1f2328',
+        'text': '#1f2328',
+        'soft': '#424a53',
+        'muted': '#59636e',
+        'accent': '#0f766e',
+        'accent2': '#1a7f37',
+        'amber': '#115e59',
+        'pink': '#0f766e',
         'bright': '#0f766e',
-        'rain': '#0d9488',
+        'rain': '#0f766e',
         'rain_head': '#0f766e',
-        'rain_opacity': 0.42,
-        'glow': 0.16,
-        'veil': '#f2fbf8',
+        'rain_opacity': 0.2,
+        'rain_head_opacity': 0.4,
+        'glow': 0,
+        'text_glow': False,
+        'veil': '#f6f8fa',
     },
 }
 
@@ -162,17 +169,20 @@ class Svg:
         return fid
 
     def text_glow(self, blur: float = 6) -> str:
-        """Soft halo behind text (like text-shadow on insighteo.pl)."""
+        """Soft halo behind text (like text-shadow on insighteo.pl): the ` filter="..."` attribute to add.
+        Empty in palettes without text_glow (light: on white the halo only blurs the text)."""
+        if not self.p['text_glow']:
+            return ''
         fid = self.uid('halo')
         self.defs.append(f'<filter id="{fid}" x="-10%" y="-40%" width="120%" height="180%">'
                          f'<feGaussianBlur in="SourceGraphic" stdDeviation="{blur}" result="b"/>'
                          f'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>')
-        return fid
+        return f' filter="url(#{fid})"'
 
     def panel(self, x: float, y: float, w: float, h: float, *, rx: float = 14, glow: bool = True) -> None:
         p = self.p
-        if glow:
-            fid = self.glow_filter(18 if self.theme == 'dark' else 12)
+        if glow and p['glow']:
+            fid = self.glow_filter(18)
             self.add(f'<rect x="{x + 10}" y="{y + 14}" width="{w - 20}" height="{h - 20}" rx="{rx}" fill="{p["accent"]}" '
                      f'opacity="{p["glow"]}" filter="url(#{fid})"/>')
         self.add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{rx}" fill="{p["panel"]}"/>')
