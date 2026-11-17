@@ -1,7 +1,8 @@
 """Live part of the profile: GitHub activity over the past year, redrawn daily by GitHub Actions.
 
 Reads the public contribution calendar through the GraphQL API (GITHUB_TOKEN in Actions is enough) and draws
-it in the insighteo.pl style: a weekly signal line and a daily heatmap, dark and light, wide and narrow.
+it in the insighteo.pl style: a weekly signal line and a daily heatmap, wide and narrow, each file dark and light inside
+(svgkit.save_themed: the SVG follows the theme GitHub paints).
 No figures on the graphic (rule from insighteo.pl): only the shape of the activity and month names.
 
 Usage:
@@ -19,7 +20,7 @@ import subprocess
 import sys
 import urllib.request
 
-from svgkit import Svg
+from svgkit import Svg, save_themed
 
 LOGIN = os.environ.get('PROFILE_LOGIN', 'tlabedzki')
 QUERY = '''query($login:String!){user(login:$login){contributionsCollection{contributionCalendar{
@@ -184,10 +185,10 @@ def main() -> None:
     else:
         data = fetch()
     weeks = weeks_from(data)
-    for theme in ('dark', 'light'):
-        for narrow in (False, True):
-            path = draw(weeks, theme, narrow).save(f'activity-{theme}{"-narrow" if narrow else ""}.svg')
-            print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
+    for narrow in (False, True):
+        path = save_themed(f'activity{"-narrow" if narrow else ""}.svg', draw(weeks, 'dark', narrow),
+                           draw(weeks, 'light', narrow))
+        print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
 
 
 if __name__ == '__main__':
