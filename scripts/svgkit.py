@@ -52,6 +52,8 @@ PALETTES = {
         'glow': 0.35,
         'text_glow': True,
         'veil': '#000502',
+        'name': '#ecfeff',
+        'caret_opacity': 0.7,
     },
     # Light: GitHub's own light colors (Primer: canvas, borders, fg default/muted, success) with one teal accent
     # from insighteo.pl, darkened for contrast. No glow and no warm colors: on white a glow blurs the text and
@@ -79,6 +81,10 @@ PALETTES = {
         'glow': 0,
         'text_glow': False,
         'veil': '#f6f8fa',
+        # banner name: graphite instead of near-black and a toned-down caret, so the typed name does not look
+        # hard against the light background (zlecenie 330)
+        'name': '#32383f',
+        'caret_opacity': 0.45,
     },
 }
 
