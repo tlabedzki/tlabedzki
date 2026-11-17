@@ -21,8 +21,7 @@ FONTS = ROOT / 'fonts'
 ASSETS = ROOT / 'assets'
 METRICS = json.loads((FONTS / 'metrics.json').read_text(encoding='utf-8'))
 
-# Palette 7a from insighteo.pl (src/styles/global.css). Dark only: the profile shows the same dark graphics
-# in every GitHub theme (a light variant once appeared on a dark theme, zlecenie 317).
+# Palette 7a from insighteo.pl (src/styles/global.css) and its light counterpart.
 PALETTES = {
     'dark': {
         'page': '#0d1117',
@@ -45,6 +44,28 @@ PALETTES = {
         'rain_opacity': 0.8,
         'glow': 0.35,
         'veil': '#000502',
+    },
+    'light': {
+        'page': '#ffffff',
+        'bg': '#f2fbf8',
+        'panel': '#fbfefd',
+        'bar': '#e8f7f3',
+        'line': 'rgba(13,148,136,0.32)',
+        'line_soft': 'rgba(13,148,136,0.16)',
+        'ink': '#042f2e',
+        'text': '#115e59',
+        'soft': '#2f514c',
+        'muted': '#56746f',
+        'accent': '#0d9488',
+        'accent2': '#15803d',
+        'amber': '#b45309',
+        'pink': '#be185d',
+        'bright': '#0f766e',
+        'rain': '#0d9488',
+        'rain_head': '#0f766e',
+        'rain_opacity': 0.42,
+        'glow': 0.16,
+        'veil': '#f2fbf8',
     },
 }
 
@@ -156,7 +177,7 @@ class Svg:
     def panel(self, x: float, y: float, w: float, h: float, *, rx: float = 14, glow: bool = True) -> None:
         p = self.p
         if glow:
-            fid = self.glow_filter(18)
+            fid = self.glow_filter(18 if self.theme == 'dark' else 12)
             self.add(f'<rect x="{x + 10}" y="{y + 14}" width="{w - 20}" height="{h - 20}" rx="{rx}" fill="{p["accent"]}" '
                      f'opacity="{p["glow"]}" filter="url(#{fid})"/>')
         self.add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{rx}" fill="{p["panel"]}"/>')
