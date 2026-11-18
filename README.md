@@ -20,11 +20,11 @@
 </picture>
 
 <picture>
-  <source media="(max-width: 600px)" srcset="assets/projects-narrow.svg">
-  <img src="assets/projects.svg" width="100%" alt="Terminal: ls ~/projects lists the projects Tomasz has published. Data-Generator: A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns and A/B tests. Truth columns let you check your analysis, and 52 realism criteria pass. Stack: Python, pandas, NumPy, Dash, Plotly. Link: https://github.com/tlabedzki/Data-Generator.">
+  <source media="(max-width: 600px)" srcset="assets/project-data-generator-narrow.svg">
+  <img src="assets/project-data-generator.svg" width="100%" alt="Project 1 of 1: Data-Generator. A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns and A/B tests. Truth columns let you check your analysis, and 52 realism criteria pass. Stack: Python, pandas, NumPy, Dash, Plotly. Animated preview: its web app (Dash) scrolls from the parameters through the data preview to the charts. Link below the card: View project.">
 </picture>
 
-<p>&nbsp;&nbsp;→ <a href="https://github.com/tlabedzki/Data-Generator"><b>Data-Generator</b></a></p>
+<p><a href="https://github.com/tlabedzki/Data-Generator"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Data-Generator on GitHub"></a></p>
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/activity-narrow.svg">
