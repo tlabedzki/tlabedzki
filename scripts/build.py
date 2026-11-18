@@ -522,6 +522,8 @@ PROJECTS = [
         'slug': 'data-generator',
         'desc': 'A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns '
                 'and A/B tests. Truth columns let you check your analysis, and 52 realism criteria pass.',
+        # analyses the data is good for (zlecenie 373): one line under the description, as in the repo README
+        'uses': ['sales forecasting', 'cohorts and churn', 'market basket', 'campaign ROAS', 'A/B tests'],
         'stack': [('Python', 'python'), ('pandas', 'pandas'), ('NumPy', 'numpy'), ('Dash', None),
                   ('Plotly', 'plotly')],
         'url': 'https://github.com/tlabedzki/Data-Generator',
@@ -660,6 +662,11 @@ def project_card(proj: dict, index: int, theme: str, narrow: bool) -> Svg:
     b_x = 0 if narrow else inner - bw
     cw = width('m', 'mono-400', size)
     lines = wrap(proj['desc'], 'mono-400', size, col_w)
+    uses_label = 'Practise:'
+    # wrap only between analyses: a no-break space inside each (e.g. "A/B tests") keeps it on one line
+    nb = [u.replace(' ', '\u00a0') for u in proj.get('uses', [])]
+    uses = [line.replace('\u00a0', ' ')
+            for line in wrap(f'{uses_label} {", ".join(nb)}', 'mono-400', size, col_w)] if nb else []
     bar = 26 if narrow else 30
     b_h = bar + bw * SHOT_VIEW / 960
     # layout (y relative to the window body)
@@ -674,12 +681,14 @@ def project_card(proj: dict, index: int, theme: str, narrow: bool) -> Svg:
         name_y = top + name_size * 0.95
         b_y = top + 4
         desc_y = name_y + 22 + size
-    chips_y = desc_y + (len(lines) - 1) * lh + size + 18
+    uses_y = desc_y + len(lines) * lh + size * 0.6  # first baseline of the analyses line, half a line below
+    chips_y = (uses_y + (len(uses) - 1) * lh if uses else desc_y + (len(lines) - 1) * lh) + size + 18
     chip_rows_h = size * 2.15 * 2 + 8  # room for two rows of chips (measured again below)
     body_h = max(b_y + b_h, chips_y + chip_rows_h) + (24 if narrow else 30)
     H = 12 + 40 + body_h + 18
     total = len(PROJECTS)
-    alt = (f'Project {index + 1} of {total}: {proj["name"]}. {proj["desc"]} '
+    uses_alt = f'{uses_label} {", ".join(proj["uses"])}. ' if uses else ''
+    alt = (f'Project {index + 1} of {total}: {proj["name"]}. {proj["desc"]} {uses_alt}'
            f'Stack: {", ".join(n for n, _ in proj["stack"])}. Animated preview: {proj["shot_alt"]}. '
            f'Link below the card: View project.')
     svg = Svg(W, H, theme, alt)
@@ -704,6 +713,15 @@ def project_card(proj: dict, index: int, theme: str, narrow: bool) -> Svg:
     svg.add(f'<g class="up" style="animation-delay:{d:.2f}s">'
             + ''.join(svg.text(bx + col_x, by + desc_y + i * lh, line, 'mono-400', size, p['text'])
                       for i, line in enumerate(lines)) + '</g>')
+    if uses:
+        # the label in the accent colour, the analyses in the description's colour
+        first = uses[0][len(uses_label):]
+        lx = bx + col_x + width(uses_label, 'mono-400', size)
+        svg.add(f'<g class="up" style="animation-delay:{d + 0.1:.2f}s">'
+                + svg.text(bx + col_x, by + uses_y, uses_label, 'mono-400', size, p['accent'])
+                + svg.text(lx, by + uses_y, first, 'mono-400', size, p['text'], style='white-space:pre')
+                + ''.join(svg.text(bx + col_x, by + uses_y + i * lh, line, 'mono-400', size, p['text'])
+                          for i, line in enumerate(uses) if i) + '</g>')
     end = chips(svg, proj['stack'], bx + col_x, by + chips_y, col_w, size * 0.92, d + 0.2)
     assert end - by <= chips_y + chip_rows_h + 0.1, 'stack chips need more than two rows'
     return svg
