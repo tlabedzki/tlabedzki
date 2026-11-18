@@ -21,7 +21,7 @@
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/projects-narrow.svg">
-  <img src="assets/projects.svg" width="100%" alt="Terminal: ls ~/projects lists the projects Tomasz has published. Data-Generator: Realistic, fully fictional Polish online shop data: customers, products, orders and sales, with seasonality, growth and discounts. From the command line or a web app. Stack: Python, pandas, Dash, Plotly. Link: https://github.com/tlabedzki/Data-Generator.">
+  <img src="assets/projects.svg" width="100%" alt="Terminal: ls ~/projects lists the projects Tomasz has published. Data-Generator: A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns and A/B tests. Truth columns let you check your analysis, and 52 realism criteria pass. Stack: Python, pandas, NumPy, Dash, Plotly. Link: https://github.com/tlabedzki/Data-Generator.">
 </picture>
 
 <p>&nbsp;&nbsp;→ <a href="https://github.com/tlabedzki/Data-Generator"><b>Data-Generator</b></a></p>

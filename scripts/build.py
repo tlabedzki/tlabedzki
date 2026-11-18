@@ -514,9 +514,9 @@ def career(theme: str, narrow: bool) -> Svg:
 DG_YEAR = [1.35, 1.4, 1.65, 1.75, 1.7, 1.3, 1.75, 1.75, 1.8, 2.6, 4.25, 3.6]
 PROJECTS = [
     ('Data-Generator',
-     'Realistic, fully fictional Polish online shop data: customers, products, orders and sales, with seasonality, '
-     'growth and discounts. From the command line or a web app.',
-     'Python · pandas · Dash · Plotly',
+     'A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns and A/B '
+     'tests. Truth columns let you check your analysis, and 52 realism criteria pass.',
+     'Python · pandas · NumPy · Dash · Plotly',
      'https://github.com/tlabedzki/Data-Generator',
      DG_YEAR + [v * 1.16 + (0.2 if i == 10 else 0) for i, v in enumerate(DG_YEAR)]),
 ]
