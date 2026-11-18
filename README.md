@@ -20,6 +20,13 @@
 </picture>
 
 <picture>
+  <source media="(max-width: 600px)" srcset="assets/projects-narrow.svg">
+  <img src="assets/projects.svg" width="100%" alt="Terminal: ls ~/projects lists the projects Tomasz has published. Data-Generator: Realistic, fully fictional Polish online shop data: customers, products, orders and sales, with seasonality, growth and discounts. From the command line or a web app. Stack: Python, pandas, Dash, Plotly. Link: https://github.com/tlabedzki/Data-Generator.">
+</picture>
+
+<p>&nbsp;&nbsp;→ <a href="https://github.com/tlabedzki/Data-Generator"><b>Data-Generator</b></a></p>
+
+<picture>
   <source media="(max-width: 600px)" srcset="assets/activity-narrow.svg">
   <img src="assets/activity.svg" width="100%" alt="Live GitHub activity of Tomasz over the past year: a weekly signal line and a daily heatmap, redrawn every day by GitHub Actions.">
 </picture>

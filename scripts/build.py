@@ -1,4 +1,4 @@
-"""Static profile graphics: banner, agents terminal, stack modules, career graph.
+"""Static profile graphics: banner, agents terminal, stack modules, career graph, projects.
 
 Every graphic is one SVG with a dark and a light version inside (svgkit.save_themed: the SVG follows the theme
 GitHub paints), plus a narrow file for phones (README.md picks it with <picture> by width only). Texts follow insighteo.pl (src/i18n/content.ts, EN), shortened.
@@ -507,6 +507,100 @@ def career(theme: str, narrow: bool) -> Svg:
     return svg
 
 
+# ---- 5. projects -------------------------------------------------------------------------------------------------
+
+# Published portfolio projects (zlecenie 344, decyzja «3a»): name, description, stack, link, optional sparkline.
+# The link is clickable below the picture in README.md (a linked <picture> breaks on GitHub, see svgkit notes).
+DG_YEAR = [1.35, 1.4, 1.65, 1.75, 1.7, 1.3, 1.75, 1.75, 1.8, 2.6, 4.25, 3.6]
+PROJECTS = [
+    ('Data-Generator',
+     'Realistic, fully fictional Polish online shop data: customers, products, orders and sales, with seasonality, '
+     'growth and discounts. From the command line or a web app.',
+     'Python · pandas · Dash · Plotly',
+     'https://github.com/tlabedzki/Data-Generator',
+     DG_YEAR + [v * 1.16 + (0.2 if i == 10 else 0) for i, v in enumerate(DG_YEAR)]),
+]
+
+
+def sparkline(svg: Svg, x: float, y: float, w: float, h: float, values: list[float], delay: float) -> str:
+    """Smooth line (Catmull-Rom) with a soft area and amber dots on the two highest points."""
+    p = svg.p
+    top = max(values) * 1.08
+    pts = [(x + i / (len(values) - 1) * w, y + h - v / top * h) for i, v in enumerate(values)]
+    d = f'M{pts[0][0]:.1f} {pts[0][1]:.1f}'
+    for i in range(len(pts) - 1):
+        p0, p1, p2 = pts[max(i - 1, 0)], pts[i], pts[i + 1]
+        p3 = pts[min(i + 2, len(pts) - 1)]
+        c1 = (p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6)
+        c2 = (p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6)
+        d += f' C{c1[0]:.1f} {c1[1]:.1f} {c2[0]:.1f} {c2[1]:.1f} {p2[0]:.1f} {p2[1]:.1f}'
+    grad = svg.uid('area')
+    svg.defs.append(f'<linearGradient id="{grad}" x1="0" y1="0" x2="0" y2="1">'
+                    f'<stop offset="0" stop-color="{p["accent"]}" stop-opacity="0.3"/>'
+                    f'<stop offset="1" stop-color="{p["accent"]}" stop-opacity="0"/></linearGradient>')
+    peaks = sorted(range(len(values)), key=lambda i: values[i])[-2:]
+    halo = svg.text_glow(3)
+    return (f'<g class="up" style="animation-delay:{delay:.2f}s">'
+            f'<line x1="{x}" y1="{y + h}" x2="{x + w}" y2="{y + h}" stroke="{p["line_soft"]}" stroke-dasharray="3 5"/>'
+            f'<path d="{d} L{x + w:.1f} {y + h:.1f} L{x:.1f} {y + h:.1f} Z" fill="url(#{grad})"/>'
+            f'<path d="{d}" stroke="{p["accent"]}" stroke-width="2.5" stroke-linecap="round"{halo}/>'
+            + ''.join(f'<circle cx="{pts[i][0]:.1f}" cy="{pts[i][1]:.1f}" r="4" fill="{p["amber"]}"/>' for i in peaks)
+            + '</g>')
+
+
+def projects(theme: str, narrow: bool) -> Svg:
+    W = 440 if narrow else 960
+    size = 14 if narrow else 16.5
+    lh = size * 1.75
+    pad = 20 if narrow else 30
+    spark_w, spark_h = (0, 0) if narrow else (250, 92)
+    text_w = W - 24 - pad * 2 - (0 if narrow else spark_w + 40)
+    cw = width('m', 'mono-400', size)
+    blocks = [(name, wrap(desc, 'mono-400', size, text_w - cw * 2), stack_, url, spark)
+              for name, desc, stack_, url, spark in PROJECTS]
+    rows = 1 + sum(1.5 + len(lines) + 2 for _, lines, *_ in blocks) + 1.3
+    H = 40 + 26 + rows * lh + 34
+    alt = ('Terminal: ls ~/projects lists the projects Tomasz has published. ' +
+           ' '.join(f'{name}: {desc} Stack: {stack_.replace(" · ", ", ")}. Link: {url}.'
+                    for name, desc, stack_, url, _ in PROJECTS))
+    svg = Svg(W, H, theme, alt)
+    p = svg.p
+    svg.css.append(BASE_CSS)
+    x, y, w, h = 12, 12, W - 24, H - 30
+    top = svg.window(x, y, w, h, 'tomasz@insighteo: ~/projects')
+    tx = x + pad
+    ty = top + 26 + size
+    svg.add(svg.text(tx, ty, '$', 'mono-400', size, p['accent']))
+    tag, t, _ = typed(svg, tx + cw * 2, ty, 'ls ~/projects', 'mono-400', size, p['ink'], 0.4, 0.04)
+    svg.add(tag)
+    halo = svg.text_glow(6)
+    for k, (name, lines, stack_, url, spark) in enumerate(blocks):
+        t_show = t + 0.35 + k * 0.4
+        ty += lh * 1.5
+        block_top = ty
+        g = [svg.text(tx, ty, f'{name}/', 'mono-600', size * 1.15, p['bright'], extra=halo)]
+        for i, line in enumerate(lines):
+            g.append(svg.text(tx + cw * 2, ty + (i + 1) * lh, line, 'mono-400', size, p['text']))
+        ty += lh * (len(lines) + 1)
+        g.append(svg.text(tx + cw * 2, ty, stack_, 'mono-400', size * 0.92, p['muted']))
+        ty += lh
+        g.append(svg.arrow(tx + cw * 2, ty, size, p['accent']))
+        g.append(svg.text(tx + cw * 4, ty, url.removeprefix('https://'), 'mono-400', size * (0.86 if narrow else 1),
+                          p['accent']))
+        svg.add(f'<g class="up" style="animation-delay:{t_show:.2f}s">{"".join(g)}</g>')
+        if spark and not narrow:
+            sx = x + w - pad - spark_w
+            sy = block_top + (ty - block_top) / 2 - spark_h / 2 - size * 0.3
+            svg.add(sparkline(svg, sx, sy, spark_w, spark_h, spark, t_show + 0.3))
+    t_end = t + 0.35 + len(blocks) * 0.4 + 0.3
+    ty += lh * 1.3
+    svg.add(f'<g class="in" style="animation-delay:{t_end:.2f}s">'
+            + svg.text(tx, ty, '$', 'mono-400', size, p['accent'])
+            + f'<rect x="{tx + cw * 2:.1f}" y="{ty - size * 0.82:.1f}" width="{cw:.1f}" height="{size * 1.05:.1f}" '
+              f'fill="{p["accent"]}" style="animation:blink 1.1s step-end {t_end:.2f}s infinite"/></g>')
+    return svg
+
+
 # ---- README ------------------------------------------------------------------------------------------------------
 
 def picture(name: str, alt: str) -> str:
@@ -520,7 +614,9 @@ def picture(name: str, alt: str) -> str:
 
 def readme() -> str:
     alts = {n: fn('dark', False).title for n, fn in (('banner', banner), ('agents', agents), ('stack', stack),
-                                                       ('career', career))}
+                                                       ('career', career), ('projects', projects))}
+    # Clickable links under the projects picture (a linked <picture> breaks on GitHub).
+    links = ''.join(f'<p>&nbsp;&nbsp;→ <a href="{url}"><b>{name}</b></a></p>\n' for name, _, _, url, _ in PROJECTS)
     activity_alt = ('Live GitHub activity of Tomasz over the past year: a weekly signal line and a daily heatmap, '
                     'redrawn every day by GitHub Actions.')
     return (
@@ -529,6 +625,8 @@ def readme() -> str:
         f'{picture("agents", alts["agents"])}\n\n'
         f'{picture("stack", alts["stack"])}\n\n'
         f'{picture("career", alts["career"])}\n\n'
+        f'{picture("projects", alts["projects"])}\n\n'
+        f'{links}\n'
         f'{picture("activity", activity_alt)}\n'
     )
 
@@ -536,7 +634,8 @@ def readme() -> str:
 def main() -> None:
     (ROOT / 'README.md').write_text(readme(), encoding='utf-8')
     for narrow in (False, True):
-        for name, fn in (('banner', banner), ('agents', agents), ('stack', stack), ('career', career)):
+        for name, fn in (('banner', banner), ('agents', agents), ('stack', stack), ('career', career),
+                         ('projects', projects)):
             path = save_themed(f'{name}{"-narrow" if narrow else ""}.svg', fn('dark', narrow), fn('light', narrow))
             print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
 
