@@ -249,7 +249,7 @@ def _render(head: Svg, parts: list[Svg]) -> str:
             f'height="{head.h:g}" role="img" aria-labelledby="title" fill="none">'
             f'<title id="title">{esc(head.title)}</title>'
             f'<style>{fonts}{css}{reduce}</style>'
-            f'<defs>{"".join(d for s in parts for d in s.defs)}</defs>'
+            f'<defs>{"".join(dict.fromkeys(d for s in parts for d in s.defs))}</defs>'  # shared images once
             f'{body}</svg>\n')
 
 

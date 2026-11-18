@@ -8,6 +8,7 @@ Usage: python scripts/build.py
 """
 from __future__ import annotations
 
+import base64
 import random
 
 from icons import ICONS
@@ -509,95 +510,238 @@ def career(theme: str, narrow: bool) -> Svg:
 
 # ---- 5. projects -------------------------------------------------------------------------------------------------
 
-# Published portfolio projects (zlecenie 344, decyzja «3a»): name, description, stack, link, optional sparkline.
-# The link is clickable below the picture in README.md (a linked <picture> breaks on GitHub, see svgkit notes).
-DG_YEAR = [1.35, 1.4, 1.65, 1.75, 1.7, 1.3, 1.75, 1.75, 1.8, 2.6, 4.25, 3.6]
+# Published portfolio projects (zlecenie 344, decyzja «3a»; bigger card with the app and a button: zlecenie 364).
+# One card per project (assets/project-<slug>.svg), each followed in README.md by a clickable "View project" button:
+# a link inside an SVG does not work on GitHub and a linked <picture> breaks (see svgkit notes), so the button is a
+# plain linked <img>. A new project = one more entry here, a shot made by scripts/make_shot.py and build.py.
+# shot: shots/<file>, a strip of the app page 960 CSS px wide; stops: CSS px of the page where the scroll pauses,
+# rest: the stop shown without motion (prefers-reduced-motion).
 PROJECTS = [
-    ('Data-Generator',
-     'A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns and A/B '
-     'tests. Truth columns let you check your analysis, and 52 realism criteria pass.',
-     'Python · pandas · NumPy · Dash · Plotly',
-     'https://github.com/tlabedzki/Data-Generator',
-     DG_YEAR + [v * 1.16 + (0.2 if i == 10 else 0) for i, v in enumerate(DG_YEAR)]),
+    {
+        'name': 'Data-Generator',
+        'slug': 'data-generator',
+        'desc': 'A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns '
+                'and A/B tests. Truth columns let you check your analysis, and 52 realism criteria pass.',
+        'stack': [('Python', 'python'), ('pandas', 'pandas'), ('NumPy', 'numpy'), ('Dash', None),
+                  ('Plotly', 'plotly')],
+        'url': 'https://github.com/tlabedzki/Data-Generator',
+        'run': 'python -m ui.app',
+        'serve': 'Dash is running on http://127.0.0.1:8050/',
+        'host': '127.0.0.1:8050',
+        'shot': 'data-generator.webp',
+        'stops': [0, 470, 1460, 2330, 2870],
+        'rest': 2330,
+        'shot_alt': 'its web app (Dash) scrolls from the parameters through the data preview to the charts',
+    },
 ]
+SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
+BUTTON = 'view-project'
 
 
-def sparkline(svg: Svg, x: float, y: float, w: float, h: float, values: list[float], delay: float) -> str:
-    """Smooth line (Catmull-Rom) with a soft area and amber dots on the two highest points."""
+def webp_size(data: bytes) -> tuple[int, int]:
+    """Width and height of a WebP (VP8, VP8L or VP8X) without Pillow: build.py stays on the standard library."""
+    kind = data[12:16]
+    if kind == b'VP8X':
+        return 1 + int.from_bytes(data[24:27], 'little'), 1 + int.from_bytes(data[27:30], 'little')
+    if kind == b'VP8L':
+        b = int.from_bytes(data[21:25], 'little')
+        return (b & 0x3FFF) + 1, ((b >> 14) & 0x3FFF) + 1
+    return int.from_bytes(data[26:28], 'little') & 0x3FFF, int.from_bytes(data[28:30], 'little') & 0x3FFF
+
+
+def scroll_keyframes(stops: list[float], hold: float = 1.9, glide: float = 1.15,
+                     back: float = 1.4) -> tuple[list[tuple[float, float]], float]:
+    """Keyframe stops (percent, CSS px) for a page that pauses at each stop, glides on and finally scrolls back up."""
+    total = len(stops) * hold + (len(stops) - 1) * glide + back
+    frames, t = [], 0.0
+    for i, s in enumerate(stops):
+        frames.append((t / total * 100, s))
+        t += hold
+        frames.append((t / total * 100, s))
+        t += glide if i < len(stops) - 1 else 0
+    frames.append((100.0, stops[0]))
+    return frames, total
+
+
+def browser(svg: Svg, proj: dict, x: float, y: float, w: float, delay: float, narrow: bool) -> float:
+    """Browser frame with the app inside, scrolled through by CSS. Returns the bottom y."""
     p = svg.p
-    top = max(values) * 1.08
-    pts = [(x + i / (len(values) - 1) * w, y + h - v / top * h) for i, v in enumerate(values)]
-    d = f'M{pts[0][0]:.1f} {pts[0][1]:.1f}'
-    for i in range(len(pts) - 1):
-        p0, p1, p2 = pts[max(i - 1, 0)], pts[i], pts[i + 1]
-        p3 = pts[min(i + 2, len(pts) - 1)]
-        c1 = (p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6)
-        c2 = (p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6)
-        d += f' C{c1[0]:.1f} {c1[1]:.1f} {c2[0]:.1f} {c2[1]:.1f} {p2[0]:.1f} {p2[1]:.1f}'
-    grad = svg.uid('area')
-    svg.defs.append(f'<linearGradient id="{grad}" x1="0" y1="0" x2="0" y2="1">'
-                    f'<stop offset="0" stop-color="{p["accent"]}" stop-opacity="0.3"/>'
-                    f'<stop offset="1" stop-color="{p["accent"]}" stop-opacity="0"/></linearGradient>')
-    peaks = sorted(range(len(values)), key=lambda i: values[i])[-2:]
-    halo = svg.text_glow(3)
-    return (f'<g class="up" style="animation-delay:{delay:.2f}s">'
-            f'<line x1="{x}" y1="{y + h}" x2="{x + w}" y2="{y + h}" stroke="{p["line_soft"]}" stroke-dasharray="3 5"/>'
-            f'<path d="{d} L{x + w:.1f} {y + h:.1f} L{x:.1f} {y + h:.1f} Z" fill="url(#{grad})"/>'
-            f'<path d="{d}" stroke="{p["accent"]}" stroke-width="2.5" stroke-linecap="round"{halo}/>'
-            + ''.join(f'<circle cx="{pts[i][0]:.1f}" cy="{pts[i][1]:.1f}" r="4" fill="{p["amber"]}"/>' for i in peaks)
-            + '</g>')
+    data = (ROOT / 'shots' / proj['shot']).read_bytes()
+    iw, ih = webp_size(data)
+    bar = 26 if narrow else 30
+    vh = w * SHOT_VIEW / 960
+    k = w / 960  # CSS px of the page -> px in the card
+    img_h = w * ih / iw
+    shot_id = f'shot-{proj["slug"]}'  # same in both themes, so _render keeps one copy of the image
+    svg.defs.append(f'<image id="{shot_id}" width="{w:.1f}" height="{img_h:.1f}" preserveAspectRatio="none" '
+                    f'href="data:image/webp;base64,{base64.b64encode(data).decode()}"/>')
+    clip = svg.uid('view')
+    svg.defs.append(f'<clipPath id="{clip}"><rect x="{x}" y="{y + bar}" width="{w}" height="{vh:.1f}"/></clipPath>')
+    frame = svg.uid('frame')
+    svg.defs.append(f'<clipPath id="{frame}"><rect x="{x}" y="{y}" width="{w}" height="{bar + vh:.1f}" rx="10"/></clipPath>')
+    # scroll: the page and the scrollbar thumb move on the same keyframes
+    frames, total = scroll_keyframes(proj['stops'])
+    max_stop = ih / iw * 960 - SHOT_VIEW
+    thumb_h = vh * SHOT_VIEW / (ih / iw * 960)
+    page, thumb = svg.uid('page'), svg.uid('thumb')
+    ease = 'animation-timing-function:cubic-bezier(.65,0,.35,1)'
+    kf_page = ''.join(f'{pc:.2f}%{{transform:translateY({-s * k:.1f}px);{ease}}}' for pc, s in frames)
+    kf_thumb = ''.join(f'{pc:.2f}%{{transform:translateY({s / max_stop * (vh - thumb_h - 6):.1f}px);{ease}}}'
+                       for pc, s in frames)
+    start = delay + 1.6
+    svg.css.append(f'@keyframes {page}{{{kf_page}}}@keyframes {thumb}{{{kf_thumb}}}'
+                   f'.{page}{{transform:translateY({-proj["rest"] * k:.1f}px);'
+                   f'animation:{page} {total:.2f}s {start:.2f}s infinite both}}'
+                   f'.{thumb}{{transform:translateY({proj["rest"] / max_stop * (vh - thumb_h - 6):.1f}px);'
+                   f'animation:{thumb} {total:.2f}s {start:.2f}s infinite both}}')
+    glow = ''
+    if p['glow']:
+        fid = svg.glow_filter(14)
+        glow = (f'<rect x="{x + 8}" y="{y + 12}" width="{w - 16}" height="{bar + vh - 16:.1f}" rx="10" '
+                f'fill="{p["accent"]}" opacity="{p["glow"] * 0.8:.2f}" filter="url(#{fid})"/>')
+    dots = ''.join(f'<circle cx="{x + 14 + i * 13}" cy="{y + bar / 2:.1f}" r="4" fill="{p["muted"]}" opacity="0.5"/>'
+                   for i in range(3))
+    fs = 11 if narrow else 12
+    host_w = width(proj['host'], 'mono-400', fs) + 28
+    pill_x = x + 62
+    pill = (f'<rect x="{pill_x:.1f}" y="{y + bar / 2 - 9:.1f}" width="{host_w:.1f}" height="18" rx="9" fill="{p["bg"]}" '
+            f'stroke="{p["line_soft"]}"/>'
+            f'<circle cx="{pill_x + 10:.1f}" cy="{y + bar / 2:.1f}" r="2.5" fill="{p["accent2"]}"/>'
+            + svg.text(pill_x + 18, y + bar / 2 + fs * 0.36, proj['host'], 'mono-400', fs, p['muted']))
+    track_x = x + w - 7
+    svg.add(f'<g class="up" style="animation-delay:{delay:.2f}s">{glow}'
+            f'<g clip-path="url(#{frame})">'
+            f'<rect x="{x}" y="{y}" width="{w}" height="{bar + vh:.1f}" fill="#ffffff"/>'
+            f'<rect x="{x}" y="{y}" width="{w}" height="{bar}" fill="{p["bar"]}"/>'
+            f'<line x1="{x}" y1="{y + bar}" x2="{x + w}" y2="{y + bar}" stroke="{p["line_soft"]}"/>'
+            f'{dots}{pill}'
+            f'<g clip-path="url(#{clip})"><g class="{page}"><use href="#{shot_id}" x="{x}" y="{y + bar}"/></g>'
+            f'<rect class="{thumb}" x="{track_x:.1f}" y="{y + bar + 3:.1f}" width="4" height="{thumb_h:.1f}" rx="2" '
+            f'fill="#14232a" opacity="0.28"/></g></g>'
+            f'<rect x="{x + 0.5}" y="{y + 0.5}" width="{w - 1}" height="{bar + vh - 1:.1f}" rx="10" '
+            f'stroke="{p["accent"] if p["glow"] else p["line"]}" stroke-opacity="{0.55 if p["glow"] else 1}"/></g>')
+    return y + bar + vh
 
 
-def projects(theme: str, narrow: bool) -> Svg:
+def chips(svg: Svg, items: list[tuple[str, str | None]], x: float, y: float, max_w: float, size: float,
+          delay: float) -> float:
+    """Stack chips like the stack card, wrapped to max_w. Returns the bottom y."""
+    p = svg.p
+    ch, gap, isz = size * 2.15, 8, size * 1.1
+    cx, cy, out = x, y, []
+    for i, (name, key) in enumerate(items):
+        cw = 11 + (isz + 7 if key else 0) + width(name, 'mono-400', size) + 12
+        if cx + cw > x + max_w and cx > x:
+            cx, cy = x, cy + ch + gap
+        g = (f'<rect x="{cx:.1f}" y="{cy:.1f}" width="{cw:.1f}" height="{ch:.1f}" rx="7" fill="{p["bar"]}" '
+             f'stroke="{p["line"]}"/>')
+        tx = cx + 11
+        if key:
+            g += icon(svg, key, tx, cy + (ch - isz) / 2, isz)
+            tx += isz + 7
+        g += svg.text(tx, cy + ch / 2 + size * 0.36, name, 'mono-400', size, p['ink'])
+        out.append(f'<g class="up" style="animation-delay:{delay + i * 0.07:.2f}s">{g}</g>')
+        cx += cw + gap
+    svg.add(*out)
+    return cy + ch
+
+
+def project_card(proj: dict, index: int, theme: str, narrow: bool) -> Svg:
     W = 440 if narrow else 960
-    size = 14 if narrow else 16.5
-    lh = size * 1.75
     pad = 20 if narrow else 30
-    spark_w, spark_h = (0, 0) if narrow else (250, 92)
-    text_w = W - 24 - pad * 2 - (0 if narrow else spark_w + 40)
+    size = 13 if narrow else 15
+    lh = size * 1.75
+    name_size = 25 if narrow else 30
+    inner = W - 24 - pad * 2
+    bw = inner if narrow else 520  # browser width
+    # desktop: text on the left, browser on the right (user's choice, zlecenie 364); phone: one column
+    col_x = 0  # text column, relative to the left padding
+    col_w = inner if narrow else inner - bw - 40
+    b_x = 0 if narrow else inner - bw
     cw = width('m', 'mono-400', size)
-    blocks = [(name, wrap(desc, 'mono-400', size, text_w - cw * 2), stack_, url, spark)
-              for name, desc, stack_, url, spark in PROJECTS]
-    rows = 1 + sum(1.5 + len(lines) + 2 for _, lines, *_ in blocks) + 1.3
-    H = 40 + 26 + rows * lh + 34
-    alt = ('Terminal: ls ~/projects lists the projects Tomasz has published. ' +
-           ' '.join(f'{name}: {desc} Stack: {stack_.replace(" · ", ", ")}. Link: {url}.'
-                    for name, desc, stack_, url, _ in PROJECTS))
+    lines = wrap(proj['desc'], 'mono-400', size, col_w)
+    bar = 26 if narrow else 30
+    b_h = bar + bw * SHOT_VIEW / 960
+    # layout (y relative to the window body)
+    head = 26 + size  # prompt baseline
+    serve = head + lh
+    top = serve + lh * 0.9  # content starts here
+    if narrow:
+        name_y = top + name_size * 0.9
+        b_y = name_y + 18
+        desc_y = b_y + b_h + 22 + size
+    else:
+        name_y = top + name_size * 0.95
+        b_y = top + 4
+        desc_y = name_y + 22 + size
+    chips_y = desc_y + (len(lines) - 1) * lh + size + 18
+    chip_rows_h = size * 2.15 * 2 + 8  # room for two rows of chips (measured again below)
+    body_h = max(b_y + b_h, chips_y + chip_rows_h) + (24 if narrow else 30)
+    H = 12 + 40 + body_h + 18
+    total = len(PROJECTS)
+    alt = (f'Project {index + 1} of {total}: {proj["name"]}. {proj["desc"]} '
+           f'Stack: {", ".join(n for n, _ in proj["stack"])}. Animated preview: {proj["shot_alt"]}. '
+           f'Link below the card: View project.')
     svg = Svg(W, H, theme, alt)
     p = svg.p
     svg.css.append(BASE_CSS)
-    x, y, w, h = 12, 12, W - 24, H - 30
-    top = svg.window(x, y, w, h, 'tomasz@insighteo: ~/projects')
-    tx = x + pad
-    ty = top + 26 + size
-    svg.add(svg.text(tx, ty, '$', 'mono-400', size, p['accent']))
-    tag, t, _ = typed(svg, tx + cw * 2, ty, 'ls ~/projects', 'mono-400', size, p['ink'], 0.4, 0.04)
+    x0 = 12
+    by = svg.window(x0, 12, W - 24, H - 30, ('' if narrow else 'tomasz@insighteo: ') + f'~/projects/{proj["name"]}')
+    count = f'{index + 1:02d} / {total:02d}'  # position in the list: the card is one of a series
+    svg.add(svg.text(x0 + W - 24 - 18, 12 + 20 + 4.5, count, 'mono-400', 13, p['muted'], anchor='end'))
+    bx = x0 + pad
+    svg.add(svg.text(bx, by + head, '$', 'mono-400', size, p['accent']))
+    tag, t, _ = typed(svg, bx + cw * 2, by + head, proj['run'], 'mono-400', size, p['ink'], 0.4, 0.04)
     svg.add(tag)
+    t += 0.3
+    svg.add(svg.text(bx + cw * 2, by + serve, proj['serve'], 'mono-400', size * 0.92, p['muted'], cls='up',
+                     style=f'animation-delay:{t:.2f}s'))
     halo = svg.text_glow(6)
-    for k, (name, lines, stack_, url, spark) in enumerate(blocks):
-        t_show = t + 0.35 + k * 0.4
-        ty += lh * 1.5
-        block_top = ty
-        g = [svg.text(tx, ty, f'{name}/', 'mono-600', size * 1.15, p['bright'], extra=halo)]
-        for i, line in enumerate(lines):
-            g.append(svg.text(tx + cw * 2, ty + (i + 1) * lh, line, 'mono-400', size, p['text']))
-        ty += lh * (len(lines) + 1)
-        g.append(svg.text(tx + cw * 2, ty, stack_, 'mono-400', size * 0.92, p['muted']))
-        ty += lh
-        g.append(svg.arrow(tx + cw * 2, ty, size, p['accent']))
-        g.append(svg.text(tx + cw * 4, ty, url.removeprefix('https://'), 'mono-400', size * (0.86 if narrow else 1),
-                          p['accent']))
-        svg.add(f'<g class="up" style="animation-delay:{t_show:.2f}s">{"".join(g)}</g>')
-        if spark and not narrow:
-            sx = x + w - pad - spark_w
-            sy = block_top + (ty - block_top) / 2 - spark_h / 2 - size * 0.3
-            svg.add(sparkline(svg, sx, sy, spark_w, spark_h, spark, t_show + 0.3))
-    t_end = t + 0.35 + len(blocks) * 0.4 + 0.3
-    ty += lh * 1.3
-    svg.add(f'<g class="in" style="animation-delay:{t_end:.2f}s">'
-            + svg.text(tx, ty, '$', 'mono-400', size, p['accent'])
-            + f'<rect x="{tx + cw * 2:.1f}" y="{ty - size * 0.82:.1f}" width="{cw:.1f}" height="{size * 1.05:.1f}" '
-              f'fill="{p["accent"]}" style="animation:blink 1.1s step-end {t_end:.2f}s infinite"/></g>')
+    svg.add(svg.text(bx + col_x, by + name_y, proj['name'], 'sans-600', name_size, p['bright'], cls='up',
+                     style=f'animation-delay:{t + 0.2:.2f}s', extra=halo))
+    browser(svg, proj, bx + b_x, by + b_y, bw, t + 0.35, narrow)
+    d = t + 0.6
+    svg.add(f'<g class="up" style="animation-delay:{d:.2f}s">'
+            + ''.join(svg.text(bx + col_x, by + desc_y + i * lh, line, 'mono-400', size, p['text'])
+                      for i, line in enumerate(lines)) + '</g>')
+    end = chips(svg, proj['stack'], bx + col_x, by + chips_y, col_w, size * 0.92, d + 0.2)
+    assert end - by <= chips_y + chip_rows_h + 0.1, 'stack chips need more than two rows'
+    return svg
+
+
+def view_button(theme: str) -> Svg:
+    """The "View project" button under every card, as a linked <img> in README.md. Left margin = the card's (12 px)."""
+    W, H = 216, 56
+    svg = Svg(W, H, theme, 'View project')
+    p = svg.p
+    x, y, w, h = 12, 6, W - 18, H - 12
+    fill, ink = (p['accent'], p['bg']) if theme == 'dark' else (p['accent'], '#ffffff')
+    size = 17
+    label = 'View project'
+    tw = width(label, 'sans-600', size)
+    tx = x + (w - tw - 28) / 2
+    clip = svg.uid('btn')
+    shine = svg.uid('shine')
+    svg.defs.append(f'<clipPath id="{clip}"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10"/></clipPath>'
+                    f'<linearGradient id="{shine}" x1="0" y1="0" x2="1" y2="0">'
+                    f'<stop offset="0" stop-color="#ffffff" stop-opacity="0"/>'
+                    f'<stop offset="0.5" stop-color="#ffffff" stop-opacity="{0.45 if theme == "dark" else 0.3}"/>'
+                    f'<stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>')
+    svg.css.append('@keyframes sweep{0%,62%{transform:translateX(-90px)}100%{transform:translateX(260px)}}'
+                   '.sweep{transform:translateX(-90px);animation:sweep 4.2s ease-in-out 1.2s infinite}'
+                   '@keyframes nudge{0%,70%,100%{transform:none}80%{transform:translateX(4px)}90%{transform:none}}'
+                   '.nudge{animation:nudge 4.2s ease-in-out 1.2s infinite}')
+    glow = ''
+    if p['glow']:
+        fid = svg.glow_filter(8)
+        glow = (f'<rect x="{x + 6}" y="{y + 8}" width="{w - 12}" height="{h - 10}" rx="10" fill="{fill}" '
+                f'opacity="0.45" filter="url(#{fid})"/>')
+    svg.add(glow,
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{fill}"/>',
+            f'<g clip-path="url(#{clip})"><g class="sweep"><rect x="{x}" y="{y}" width="70" height="{h}" '
+            f'fill="url(#{shine})" transform="skewX(-20)"/></g></g>',
+            svg.text(tx, y + h / 2 + size * 0.35, label, 'sans-600', size, ink),
+            f'<g class="nudge">{svg.arrow(tx + tw + 12, y + h / 2 + size * 0.32, size, ink)}</g>')
     return svg
 
 
@@ -612,11 +756,17 @@ def picture(name: str, alt: str) -> str:
             f'</picture>')
 
 
+def button(proj: dict) -> str:
+    """Clickable "View project" under a card: a linked <img>, not a <picture> (that one breaks when linked)."""
+    return (f'<p><a href="{proj["url"]}"><img src="assets/{BUTTON}.svg" width="216" height="56" '
+            f'alt="View project: {esc(proj["name"])} on GitHub"></a></p>')
+
+
 def readme() -> str:
     alts = {n: fn('dark', False).title for n, fn in (('banner', banner), ('agents', agents), ('stack', stack),
-                                                       ('career', career), ('projects', projects))}
-    # Clickable links under the projects picture (a linked <picture> breaks on GitHub).
-    links = ''.join(f'<p>&nbsp;&nbsp;→ <a href="{url}"><b>{name}</b></a></p>\n' for name, _, _, url, _ in PROJECTS)
+                                                       ('career', career))}
+    cards = ''.join(f'{picture("project-" + proj["slug"], project_card(proj, i, "dark", False).title)}\n\n'
+                    f'{button(proj)}\n\n' for i, proj in enumerate(PROJECTS))
     activity_alt = ('Live GitHub activity of Tomasz over the past year: a weekly signal line and a daily heatmap, '
                     'redrawn every day by GitHub Actions.')
     return (
@@ -625,19 +775,23 @@ def readme() -> str:
         f'{picture("agents", alts["agents"])}\n\n'
         f'{picture("stack", alts["stack"])}\n\n'
         f'{picture("career", alts["career"])}\n\n'
-        f'{picture("projects", alts["projects"])}\n\n'
-        f'{links}\n'
+        f'{cards}'
         f'{picture("activity", activity_alt)}\n'
     )
 
 
 def main() -> None:
     (ROOT / 'README.md').write_text(readme(), encoding='utf-8')
+    out = [save_themed(f'{BUTTON}.svg', view_button('dark'), view_button('light'))]
     for narrow in (False, True):
-        for name, fn in (('banner', banner), ('agents', agents), ('stack', stack), ('career', career),
-                         ('projects', projects)):
-            path = save_themed(f'{name}{"-narrow" if narrow else ""}.svg', fn('dark', narrow), fn('light', narrow))
-            print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
+        sfx = '-narrow' if narrow else ''
+        for name, fn in (('banner', banner), ('agents', agents), ('stack', stack), ('career', career)):
+            out.append(save_themed(f'{name}{sfx}.svg', fn('dark', narrow), fn('light', narrow)))
+        for i, proj in enumerate(PROJECTS):
+            out.append(save_themed(f'project-{proj["slug"]}{sfx}.svg', project_card(proj, i, 'dark', narrow),
+                                   project_card(proj, i, 'light', narrow)))
+    for path in out:
+        print(f'{path.name:32} {path.stat().st_size / 1024:6.1f} KB')
 
 
 if __name__ == '__main__':
