@@ -654,8 +654,10 @@ def project_card(proj: dict, index: int, theme: str, narrow: bool) -> Svg:
     name_size = 25 if narrow else 30
     inner = W - 24 - pad * 2
     bw = inner if narrow else 520  # browser width
-    col_x = 0 if narrow else bw + 40  # text column, relative to the left padding
-    col_w = inner - col_x
+    # desktop: text on the left, browser on the right (user's choice, zlecenie 364); phone: one column
+    col_x = 0  # text column, relative to the left padding
+    col_w = inner if narrow else inner - bw - 40
+    b_x = 0 if narrow else inner - bw
     cw = width('m', 'mono-400', size)
     lines = wrap(proj['desc'], 'mono-400', size, col_w)
     bar = 26 if narrow else 30
@@ -697,7 +699,7 @@ def project_card(proj: dict, index: int, theme: str, narrow: bool) -> Svg:
     halo = svg.text_glow(6)
     svg.add(svg.text(bx + col_x, by + name_y, proj['name'], 'sans-600', name_size, p['bright'], cls='up',
                      style=f'animation-delay:{t + 0.2:.2f}s', extra=halo))
-    browser(svg, proj, bx, by + b_y, bw, t + 0.35, narrow)
+    browser(svg, proj, bx + b_x, by + b_y, bw, t + 0.35, narrow)
     d = t + 0.6
     svg.add(f'<g class="up" style="animation-delay:{d:.2f}s">'
             + ''.join(svg.text(bx + col_x, by + desc_y + i * lh, line, 'mono-400', size, p['text'])
