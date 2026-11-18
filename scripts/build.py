@@ -522,8 +522,8 @@ PROJECTS = [
         'slug': 'data-generator',
         'desc': 'A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns '
                 'and A/B tests. Truth columns let you check your analysis, and 52 realism criteria pass.',
-        # analyses the data is good for (zlecenie 373): one line under the description, same words as the repo README
-        'uses': ['cohorts & churn', 'basket analysis', 'funnels & ROAS', 'A/B tests', 'fraud detection'],
+        # analyses the data is good for (zlecenie 373): one line under the description, as in the repo README
+        'uses': ['sales forecasting', 'cohorts and churn', 'market basket', 'campaign ROAS', 'A/B tests'],
         'stack': [('Python', 'python'), ('pandas', 'pandas'), ('NumPy', 'numpy'), ('Dash', None),
                   ('Plotly', 'plotly')],
         'url': 'https://github.com/tlabedzki/Data-Generator',
