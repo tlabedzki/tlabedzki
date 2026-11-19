@@ -21,7 +21,7 @@
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/project-data-generator-narrow.svg">
-  <img src="assets/project-data-generator.svg" width="100%" alt="Project 1 of 1: Data-Generator. A fully fictional Polish online shop in 13 linked tables, from orders and web sessions to returns and A/B tests. Truth columns let you check your analysis, and 52 realism criteria pass. Practise: sales forecasting, cohorts and churn, market basket, campaign ROAS, A/B tests. Stack: Python, pandas, NumPy, Dash, Plotly. Animated preview: its web app (Dash) scrolls from the parameters through the data preview to the charts. Link below the card: View project.">
+  <img src="assets/project-data-generator.svg" width="100%" alt="Project 1 of 1: Data-Generator. A fully fictional Polish online shop in 14 linked tables, from orders, cancellations and reviews to web sessions, returns and A/B tests. Truth columns, down to the true churn date, let you check your analysis, and 65 realism criteria pass. Practise: sales forecasting, cohorts and churn, market basket, campaign ROAS, cancellations, ratings, A/B tests. Stack: Python, pandas, NumPy, Dash, Plotly. Animated preview: its web app (Dash) scrolls from the parameters through the data preview to the charts. Link below the card: View project.">
 </picture>
 
 <p><a href="https://github.com/tlabedzki/Data-Generator"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Data-Generator on GitHub"></a></p>
