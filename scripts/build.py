@@ -565,6 +565,30 @@ PROJECTS = [
                     'the largest price step from 10% to 15%, the yearly gross profit grows from 8.33M to '
                     '8.66M PLN, then the page scrolls to the lowered prices and the profit change per category',
     },
+    {
+        'name': 'Product-Profitability',
+        'slug': 'product-profitability',
+        'desc': 'The true margin of every product of Lumo, the shop from Data-Generator, after discounts, returns, '
+                'shipping, payment fees and affiliate commission, reconciled to the grosz. Each loss-making '
+                'bestseller gets a reason and a move: change the price, end free delivery or delist.',
+        'uses_label': 'Methods:',
+        'uses': ['cost allocation', 'margin cascade', 'reconciliation', 'decision rules', 'SQL in DuckDB'],
+        'stack': [('Python', 'python'), ('SQL', None), ('DuckDB', None), ('pandas', 'pandas'),
+                  ('Dash', None), ('Plotly', 'plotly')],
+        'url': 'https://github.com/tlabedzki/Product-Profitability',
+        'run': 'python -m ui.app',
+        'serve': 'Dash is running on http://127.0.0.1:8050/',
+        'host': '127.0.0.1:8050',
+        # zlecenie 605: docs/img/app-demo.svg from tag v1.0.0 of Product-Profitability, unchanged (same layout as
+        # the Pricing-Engine demo): the bestseller slider moves from the top 500 to the top 200, then a click on
+        # a product opens its card.
+        'demo': 'product-profitability-demo.svg',
+        'crop': (0, 0, 1000, 666.67),
+        'final': 0.30,  # the slider at the top 200 with the new numbers, before the product card opens
+        'shot_alt': 'its web app (Dash) at work. The bestseller slider moves from the top 500 to the top 200, '
+                    'the loss-making bestsellers go from 44 to 20 and their loss from -73.0k to -34.0k PLN, '
+                    'then a click on a product in the table opens its card with its margin cascade and order list',
+    },
 ]
 SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
 BUTTON = 'view-project'
