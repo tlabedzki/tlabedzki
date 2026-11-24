@@ -562,8 +562,8 @@ PROJECTS = [
         'crop': (0, 0, 1000, 666.67),  # x, y, w, h in the demo's page coordinates (1000 px wide page)
         'final': 0.4069,  # point of the loop shown without motion: both rules moved, the new numbers
         'shot_alt': 'its web app (Dash) at work. The cursor drags the competitor limit from +5% to +10% and '
-                    'the largest price step from 10% to 15%, the yearly gross profit grows from 8.09M to '
-                    '8.40M PLN, then the page scrolls to the lowered prices and the profit change per category',
+                    'the largest price step from 10% to 15%, the yearly gross profit grows from 8.33M to '
+                    '8.66M PLN, then the page scrolls to the lowered prices and the profit change per category',
     },
 ]
 SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
