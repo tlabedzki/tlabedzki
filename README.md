@@ -21,10 +21,17 @@
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/project-data-generator-narrow.svg">
-  <img src="assets/project-data-generator.svg" width="100%" alt="Project 1 of 1: Data-Generator. A fully fictional Polish online shop in 14 linked tables, from orders, cancellations and reviews to web sessions, returns and A/B tests. Truth columns, down to the true churn date, let you check your analysis, and 65 realism criteria pass. Practise: sales forecasting, cohorts and churn, market basket, campaign ROAS, cancellations, ratings, A/B tests. Stack: Python, pandas, NumPy, Dash, Plotly. Animated preview: its web app (Dash) scrolls from the parameters through the data preview to the charts. Link below the card: View project.">
+  <img src="assets/project-data-generator.svg" width="100%" alt="Project 1 of 2: Data-Generator. A fully fictional Polish online shop in 15 linked tables, from orders, reviews and the prices of five competitors to web sessions, returns and A/B tests. Truth columns, down to the true churn date, let you check your analysis, and 75 realism criteria pass. Practise: sales forecasting, cohorts and churn, market basket, campaign ROAS, cancellations, ratings, price index, A/B tests. Stack: Python, pandas, NumPy, Dash, Plotly. Animated preview: its web app (Dash) scrolls from the parameters through the data preview to the charts. Link below the card: View project.">
 </picture>
 
 <p><a href="https://github.com/tlabedzki/Data-Generator"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Data-Generator on GitHub"></a></p>
+
+<picture>
+  <source media="(max-width: 600px)" srcset="assets/project-pricing-engine-narrow.svg">
+  <img src="assets/project-pricing-engine.svg" width="100%" alt="Project 2 of 2: Pricing-Engine. A new price for every product of Lumo, the shop from Data-Generator, from elasticity estimated on price history and discounts, five competitors&#x27; prices and margin rules. Each price has a one-sentence reason, and the true elasticity checks the result. Methods: price elasticity, empirical Bayes, price index, margin rules, profit scenarios. Stack: Python, pandas, DuckDB, SciPy, Streamlit. Animated preview: its web app (Streamlit) scrolls from the pricing rules and yearly profit to the proposals with their reasons. Link below the card: View project.">
+</picture>
+
+<p><a href="https://github.com/tlabedzki/Pricing-Engine"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Pricing-Engine on GitHub"></a></p>
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/activity-narrow.svg">
