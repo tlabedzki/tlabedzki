@@ -517,8 +517,9 @@ def career(theme: str, narrow: bool) -> Svg:
 # plain linked <img>. A new project = one more entry here, a shot made by scripts/make_shot.py and build.py.
 # shot: shots/<file>, a strip of the app page 960 CSS px wide; stops: CSS px of the page where the scroll pauses,
 # rest: the stop shown without motion (prefers-reduced-motion). Instead of a shot a project may have an animated demo
-# (zlecenie 592): demo: shots/<file>.svg, the project's own README demo copied unchanged (CSS animations of transform
-# and opacity only, no script); crop: the part of its page shown; final: the point of its loop shown without motion.
+# (zlecenie 592): demo: shots/<file>.svg in the layout of a project's README demo (CSS animations of transform and
+# opacity only, no script; Pricing-Engine: scripts/make_pe_demo.py, zlecenie 593); crop: the part of its page shown;
+# final: the point of its loop shown without motion.
 PROJECTS = [
     {
         'name': 'Data-Generator',
@@ -554,14 +555,15 @@ PROJECTS = [
         'run': 'python -m ui.app',
         'serve': 'Dash is running on http://127.0.0.1:8050/',
         'host': '127.0.0.1:8050',
-        # v1.1.0 (Dash and Mantine): the animated demo from the project's README instead of a scrolled shot
-        # (zlecenie 592). shots/pricing-engine-demo.svg = docs/img/app-demo.svg at tag v1.1.0, unchanged.
+        # v1.1.0 (Dash and Mantine): an animated demo instead of a scrolled shot (zlecenie 592). Since zlecenie 593
+        # a livelier loop in the pace of Data-Generator, made by scripts/make_pe_demo.py from screenshots of the app:
+        # two rules dragged, then the proposals, the Categories tab with its charts and back to the top.
         'demo': 'pricing-engine-demo.svg',
-        'crop': (55, 12, 890, 604.67),  # x, y, w, h in the demo's page coordinates (1000 px wide page)
-        'final': 0.75,  # point of the loop shown without motion: both rules moved, the new result
+        'crop': (0, 0, 1000, 666.67),  # x, y, w, h in the demo's page coordinates (1000 px wide page)
+        'final': 0.4069,  # point of the loop shown without motion: both rules moved, the new numbers
         'shot_alt': 'its web app (Dash) at work. The cursor drags the competitor limit from +5% to +10% and '
-                    'the largest price step from 10% to 15%, and the yearly gross profit grows from 8.09M to '
-                    '8.40M PLN',
+                    'the largest price step from 10% to 15%, the yearly gross profit grows from 8.09M to '
+                    '8.40M PLN, then the page scrolls to the lowered prices and the profit change per category',
     },
 ]
 SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
