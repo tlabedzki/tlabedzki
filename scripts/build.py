@@ -520,12 +520,12 @@ PROJECTS = [
     {
         'name': 'Data-Generator',
         'slug': 'data-generator',
-        'desc': 'A fully fictional Polish online shop in 14 linked tables, from orders, cancellations and reviews to '
-                'web sessions, returns and A/B tests. Truth columns, down to the true churn date, let you check your '
-                'analysis, and 65 realism criteria pass.',
+        'desc': 'A fully fictional Polish online shop in 15 linked tables, from orders, reviews and the prices of '
+                'five competitors to web sessions, returns and A/B tests. Truth columns, down to the true churn date, '
+                'let you check your analysis, and 75 realism criteria pass.',
         # analyses the data is good for (zlecenie 373): one line under the description, as in the repo README
         'uses': ['sales forecasting', 'cohorts and churn', 'market basket', 'campaign ROAS', 'cancellations',
-                 'ratings', 'A/B tests'],
+                 'ratings', 'price index', 'A/B tests'],
         'stack': [('Python', 'python'), ('pandas', 'pandas'), ('NumPy', 'numpy'), ('Dash', None),
                   ('Plotly', 'plotly')],
         'url': 'https://github.com/tlabedzki/Data-Generator',
@@ -536,6 +536,27 @@ PROJECTS = [
         'stops': [0, 470, 1460, 2330, 2870],
         'rest': 2330,
         'shot_alt': 'its web app (Dash) scrolls from the parameters through the data preview to the charts',
+    },
+    {
+        'name': 'Pricing-Engine',
+        'slug': 'pricing-engine',
+        'desc': 'A new price for every product of Lumo, the shop from Data-Generator, from elasticity estimated on '
+                "price history and discounts, five competitors' prices and margin rules. Each price has a "
+                'one-sentence reason, and the true elasticity checks the result.',
+        'uses_label': 'Methods:',  # zlecenie 586: what the engine does, where Data-Generator lists what to practise
+        'uses': ['price elasticity', 'empirical Bayes', 'price index', 'margin rules', 'profit scenarios'],
+        'stack': [('Python', 'python'), ('pandas', 'pandas'), ('DuckDB', None), ('SciPy', None),
+                  ('Streamlit', 'streamlit')],
+        'url': 'https://github.com/tlabedzki/Pricing-Engine',
+        'run': 'streamlit run app/streamlit_app.py',
+        'serve': 'URL: http://127.0.0.1:8501',
+        'host': '127.0.0.1:8501',
+        # shot taken 1100 CSS px wide (at 960 the metrics are cut to "8.0…"), so stops are in 960 px units
+        'shot': 'pricing-engine.webp',
+        'stops': [0, 260],
+        'rest': 0,
+        'shot_alt': 'its web app (Streamlit) scrolls from the pricing rules and yearly profit to the proposals '
+                    'with their reasons',
     },
 ]
 SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
@@ -664,7 +685,7 @@ def project_card(proj: dict, index: int, theme: str, narrow: bool) -> Svg:
     b_x = 0 if narrow else inner - bw
     cw = width('m', 'mono-400', size)
     lines = wrap(proj['desc'], 'mono-400', size, col_w)
-    uses_label = 'Practise:'
+    uses_label = proj.get('uses_label', 'Practise:')
     # wrap only between analyses: a no-break space inside each (e.g. "A/B tests") keeps it on one line
     nb = [u.replace(' ', '\u00a0') for u in proj.get('uses', [])]
     uses = [line.replace('\u00a0', ' ')
