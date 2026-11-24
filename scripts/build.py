@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import random
+import re
 
 from icons import ICONS
 from svgkit import ROOT, Svg, esc, save_themed, width, wrap
@@ -515,7 +516,9 @@ def career(theme: str, narrow: bool) -> Svg:
 # a link inside an SVG does not work on GitHub and a linked <picture> breaks (see svgkit notes), so the button is a
 # plain linked <img>. A new project = one more entry here, a shot made by scripts/make_shot.py and build.py.
 # shot: shots/<file>, a strip of the app page 960 CSS px wide; stops: CSS px of the page where the scroll pauses,
-# rest: the stop shown without motion (prefers-reduced-motion).
+# rest: the stop shown without motion (prefers-reduced-motion). Instead of a shot a project may have an animated demo
+# (zlecenie 592): demo: shots/<file>.svg, the project's own README demo copied unchanged (CSS animations of transform
+# and opacity only, no script); crop: the part of its page shown; final: the point of its loop shown without motion.
 PROJECTS = [
     {
         'name': 'Data-Generator',
@@ -551,12 +554,14 @@ PROJECTS = [
         'run': 'python -m ui.app',
         'serve': 'Dash is running on http://127.0.0.1:8050/',
         'host': '127.0.0.1:8050',
-        # v1.1.0 (Dash and Mantine, the Data-Generator look; zlecenie 589): shot at 960 CSS px like Data-Generator
-        'shot': 'pricing-engine.webp',
-        'stops': [0, 490, 1010],
-        'rest': 1010,
-        'shot_alt': 'its web app (Dash) scrolls from the pricing rules to the yearly result and the proposals '
-                    'with their reasons',
+        # v1.1.0 (Dash and Mantine): the animated demo from the project's README instead of a scrolled shot
+        # (zlecenie 592). shots/pricing-engine-demo.svg = docs/img/app-demo.svg at tag v1.1.0, unchanged.
+        'demo': 'pricing-engine-demo.svg',
+        'crop': (55, 12, 890, 604.67),  # x, y, w, h in the demo's page coordinates (1000 px wide page)
+        'final': 0.75,  # point of the loop shown without motion: both rules moved, the new result
+        'shot_alt': 'its web app (Dash) at work. The cursor drags the competitor limit from +5% to +10% and '
+                    'the largest price step from 10% to 15%, and the yearly gross profit grows from 8.09M to '
+                    '8.40M PLN',
     },
 ]
 SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
@@ -588,22 +593,144 @@ def scroll_keyframes(stops: list[float], hold: float = 1.9, glide: float = 1.15,
     return frames, total
 
 
+def view_h(proj: dict, w: float) -> float:
+    """Height of the app page in a browser frame w px wide."""
+    if 'demo' in proj:
+        return w * proj['crop'][3] / proj['crop'][2]
+    return w * SHOT_VIEW / 960
+
+
+def thin_keyframes(body: str) -> str:
+    """Drop keyframes that linear interpolation between their neighbours redraws to within a fraction of a pixel
+    (the demo samples every drag at 0.15 % steps). Only inside runs of linear timing; holds and eased steps stay."""
+    frames = re.findall(r'([\d.]+)%\{([^}]*)\}', body)
+    if len(frames) < 3:
+        return body
+    num = re.compile(r'-?\d+(?:\.\d+)?')
+    pts = [(float(pc), num.findall(d.split(';animation-timing-function')[0]),
+            num.sub('#', d.split(';animation-timing-function')[0]),
+            'animation-timing-function' not in d or 'animation-timing-function:linear' in d) for pc, d in frames]
+
+    def fits(a: int, b: int) -> bool:
+        (ta, va, sa, _), (tb, vb, sb, _) = pts[a], pts[b]
+        if sa != sb or not all(p[3] for p in pts[a:b]):
+            return False
+        tol = 0.25 if 'px' in sa else 0.002
+        for t, v, s, _ in pts[a + 1:b]:
+            if s != sa:
+                return False
+            f = (t - ta) / (tb - ta)
+            if any(abs(float(x0) + (float(x1) - float(x0)) * f - float(xm)) > tol for x0, x1, xm in zip(va, vb, v)):
+                return False
+        return True
+    keep, a, b = [0], 0, 2
+    while b < len(pts):
+        if fits(a, b):
+            b += 1
+        else:
+            a = b - 1
+            keep.append(a)
+            b = a + 2
+    keep.append(len(pts) - 1)
+    return ''.join(f'{frames[i][0]}%{{{frames[i][1]}}}' for i in sorted(set(keep)))
+
+
+def demo_page(svg: Svg, proj: dict, x: float, y: float, w: float, delay: float) -> str:
+    """The page of an animated app demo (an SVG from the project's repo, CSS animations only) placed at (x, y),
+    w px wide, cut to proj['crop']. The demo's own browser bar is dropped: the card draws its own. Images go to
+    defs once (both themes <use> them), the vectors and their classes are prefixed with the slug, the loop starts
+    after the card has appeared, and prefers-reduced-motion shows the loop at proj['final'] (rules moved, new
+    result) without the cursor."""
+    src = (ROOT / 'shots' / proj['demo']).read_text(encoding='utf-8')
+    pre = proj['slug'] + '-'
+    css = re.search(r'<style>(.*?)</style>', src, re.S).group(1)
+    css = css.replace('@media (prefers-reduced-motion:reduce){*{animation:none!important}}', '')  # _render has it
+    css = re.sub(r'(@keyframes |\.|animation:)(m\d+|w\d+)\b', rf'\1{pre}\2', css)
+    css = css.replace(' 0s infinite both', f' {delay:.2f}s infinite both')
+    assert css.count(f' {delay:.2f}s infinite both') == css.count('animation:'), 'demo animation without 0s delay'
+    page = src[src.index('<g clip-path="url(#view)">') + len('<g clip-path="url(#view)">'):src.index('<rect width="1000" height="36"')]
+    assert page.endswith('</g></g>'), 'demo layout changed: page group not found'
+    page = page[:-len('</g>')]  # closes the view clip
+    page = re.sub(r'class="(m\d+|w\d+)"', rf'class="{pre}\1"', page).replace('url(#shadow)', f'url(#{pre}shadow)')
+
+    def to_defs(m: re.Match) -> str:  # one copy of every image in the file
+        iid = f'{pre}img{len(images)}'
+        images.append(m.group(0).replace('<image', f'<image id="{iid}"', 1))
+        return f'<use href="#{iid}"/>'
+    images: list[str] = []
+    page = re.sub(r'<image [^>]*/>', to_defs, page)
+    shadow = re.search(r'<filter id="shadow".*?</filter>', src, re.S).group(0).replace('id="shadow"', f'id="{pre}shadow"')
+    svg.defs.append(shadow + ''.join(images))
+    # reduced motion: every class at the final point of the loop (a hold, not mid-drag), the cursor stays hidden
+    cursor = set(re.findall(r'<g class="(m\d+)"><g class="(m\d+)"><g class="(m\d+)"><path d="M0 0V', src)[0])
+    cursor |= {c for pair in re.findall(r'<g class="(m\d+)"><circle class="(m\d+)" r="18"', src) for c in pair}
+    still = []
+    for name, body in re.findall(r'@keyframes (m\d+)\{(.*?\})\}', src):
+        if name in cursor:
+            continue
+        frames = [(float(pc), re.sub(r';?animation-timing-function:[^;}]*', '', decl))
+                  for pc, decl in re.findall(r'([\d.]+)%\{([^}]*)\}', body)]
+        at = proj['final'] * 100
+        before = [d for pc, d in frames if pc <= at][-1]
+        after = [d for pc, d in frames if pc > at][0]
+        assert before == after, f'demo class {name} moves at the final point'
+        still.append(f'.{pre}{name}{{{before}}}')
+    css += f'@media (prefers-reduced-motion: reduce){{{"".join(still)}}}'
+    css = re.sub(r'(@keyframes [\w-]+\{)(.*?\})\}', lambda m: m.group(1) + thin_keyframes(m.group(2)) + '}', css)
+    svg.css.append(css)
+    cx, cy, cw, _ = proj['crop']
+    k = w / cw
+    # the page group draws at y = 36 (below the demo's bar), so the crop starts at cy + 36
+    return f'<g transform="translate({x:.2f} {y:.2f}) scale({k:.5f}) translate({-cx:g} {-(cy + 36):g})">{page}</g>'
+
+
 def browser(svg: Svg, proj: dict, x: float, y: float, w: float, delay: float, narrow: bool) -> float:
-    """Browser frame with the app inside, scrolled through by CSS. Returns the bottom y."""
+    """Browser frame with the app inside: a shot scrolled through by CSS or an animated demo. Returns the bottom y."""
     p = svg.p
+    bar = 26 if narrow else 30
+    vh = view_h(proj, w)
+    clip, frame = svg.uid('view'), svg.uid('frame')
+    if 'demo' in proj:
+        inner = demo_page(svg, proj, x, y + bar, w, delay + 1.2)
+    else:
+        inner = shot_page(svg, proj, x, y + bar, w, vh, delay)
+    svg.defs.append(f'<clipPath id="{clip}"><rect x="{x}" y="{y + bar}" width="{w}" height="{vh:.1f}"/></clipPath>')
+    svg.defs.append(f'<clipPath id="{frame}"><rect x="{x}" y="{y}" width="{w}" height="{bar + vh:.1f}" rx="10"/></clipPath>')
+    glow = ''
+    if p['glow']:
+        fid = svg.glow_filter(14)
+        glow = (f'<rect x="{x + 8}" y="{y + 12}" width="{w - 16}" height="{bar + vh - 16:.1f}" rx="10" '
+                f'fill="{p["accent"]}" opacity="{p["glow"] * 0.8:.2f}" filter="url(#{fid})"/>')
+    dots = ''.join(f'<circle cx="{x + 14 + i * 13}" cy="{y + bar / 2:.1f}" r="4" fill="{p["muted"]}" opacity="0.5"/>'
+                   for i in range(3))
+    fs = 11 if narrow else 12
+    host_w = width(proj['host'], 'mono-400', fs) + 28
+    pill_x = x + 62
+    pill = (f'<rect x="{pill_x:.1f}" y="{y + bar / 2 - 9:.1f}" width="{host_w:.1f}" height="18" rx="9" fill="{p["bg"]}" '
+            f'stroke="{p["line_soft"]}"/>'
+            f'<circle cx="{pill_x + 10:.1f}" cy="{y + bar / 2:.1f}" r="2.5" fill="{p["accent2"]}"/>'
+            + svg.text(pill_x + 18, y + bar / 2 + fs * 0.36, proj['host'], 'mono-400', fs, p['muted']))
+    svg.add(f'<g class="up" style="animation-delay:{delay:.2f}s">{glow}'
+            f'<g clip-path="url(#{frame})">'
+            f'<rect x="{x}" y="{y}" width="{w}" height="{bar + vh:.1f}" fill="#ffffff"/>'
+            f'<rect x="{x}" y="{y}" width="{w}" height="{bar}" fill="{p["bar"]}"/>'
+            f'<line x1="{x}" y1="{y + bar}" x2="{x + w}" y2="{y + bar}" stroke="{p["line_soft"]}"/>'
+            f'{dots}{pill}'
+            f'<g clip-path="url(#{clip})">{inner}</g></g>'
+            f'<rect x="{x + 0.5}" y="{y + 0.5}" width="{w - 1}" height="{bar + vh - 1:.1f}" rx="10" '
+            f'stroke="{p["accent"] if p["glow"] else p["line"]}" stroke-opacity="{0.55 if p["glow"] else 1}"/></g>')
+    return y + bar + vh
+
+
+def shot_page(svg: Svg, proj: dict, x: float, y: float, w: float, vh: float, delay: float) -> str:
+    """A tall shot of the app page (shots/<file>.webp) at (x, y), scrolled through by CSS with a scrollbar thumb."""
     data = (ROOT / 'shots' / proj['shot']).read_bytes()
     iw, ih = webp_size(data)
-    bar = 26 if narrow else 30
-    vh = w * SHOT_VIEW / 960
     k = w / 960  # CSS px of the page -> px in the card
     img_h = w * ih / iw
     shot_id = f'shot-{proj["slug"]}'  # same in both themes, so _render keeps one copy of the image
     svg.defs.append(f'<image id="{shot_id}" width="{w:.1f}" height="{img_h:.1f}" preserveAspectRatio="none" '
                     f'href="data:image/webp;base64,{base64.b64encode(data).decode()}"/>')
-    clip = svg.uid('view')
-    svg.defs.append(f'<clipPath id="{clip}"><rect x="{x}" y="{y + bar}" width="{w}" height="{vh:.1f}"/></clipPath>')
-    frame = svg.uid('frame')
-    svg.defs.append(f'<clipPath id="{frame}"><rect x="{x}" y="{y}" width="{w}" height="{bar + vh:.1f}" rx="10"/></clipPath>')
     # scroll: the page and the scrollbar thumb move on the same keyframes
     frames, total = scroll_keyframes(proj['stops'])
     max_stop = ih / iw * 960 - SHOT_VIEW
@@ -619,33 +746,9 @@ def browser(svg: Svg, proj: dict, x: float, y: float, w: float, delay: float, na
                    f'animation:{page} {total:.2f}s {start:.2f}s infinite both}}'
                    f'.{thumb}{{transform:translateY({proj["rest"] / max_stop * (vh - thumb_h - 6):.1f}px);'
                    f'animation:{thumb} {total:.2f}s {start:.2f}s infinite both}}')
-    glow = ''
-    if p['glow']:
-        fid = svg.glow_filter(14)
-        glow = (f'<rect x="{x + 8}" y="{y + 12}" width="{w - 16}" height="{bar + vh - 16:.1f}" rx="10" '
-                f'fill="{p["accent"]}" opacity="{p["glow"] * 0.8:.2f}" filter="url(#{fid})"/>')
-    dots = ''.join(f'<circle cx="{x + 14 + i * 13}" cy="{y + bar / 2:.1f}" r="4" fill="{p["muted"]}" opacity="0.5"/>'
-                   for i in range(3))
-    fs = 11 if narrow else 12
-    host_w = width(proj['host'], 'mono-400', fs) + 28
-    pill_x = x + 62
-    pill = (f'<rect x="{pill_x:.1f}" y="{y + bar / 2 - 9:.1f}" width="{host_w:.1f}" height="18" rx="9" fill="{p["bg"]}" '
-            f'stroke="{p["line_soft"]}"/>'
-            f'<circle cx="{pill_x + 10:.1f}" cy="{y + bar / 2:.1f}" r="2.5" fill="{p["accent2"]}"/>'
-            + svg.text(pill_x + 18, y + bar / 2 + fs * 0.36, proj['host'], 'mono-400', fs, p['muted']))
-    track_x = x + w - 7
-    svg.add(f'<g class="up" style="animation-delay:{delay:.2f}s">{glow}'
-            f'<g clip-path="url(#{frame})">'
-            f'<rect x="{x}" y="{y}" width="{w}" height="{bar + vh:.1f}" fill="#ffffff"/>'
-            f'<rect x="{x}" y="{y}" width="{w}" height="{bar}" fill="{p["bar"]}"/>'
-            f'<line x1="{x}" y1="{y + bar}" x2="{x + w}" y2="{y + bar}" stroke="{p["line_soft"]}"/>'
-            f'{dots}{pill}'
-            f'<g clip-path="url(#{clip})"><g class="{page}"><use href="#{shot_id}" x="{x}" y="{y + bar}"/></g>'
-            f'<rect class="{thumb}" x="{track_x:.1f}" y="{y + bar + 3:.1f}" width="4" height="{thumb_h:.1f}" rx="2" '
-            f'fill="#14232a" opacity="0.28"/></g></g>'
-            f'<rect x="{x + 0.5}" y="{y + 0.5}" width="{w - 1}" height="{bar + vh - 1:.1f}" rx="10" '
-            f'stroke="{p["accent"] if p["glow"] else p["line"]}" stroke-opacity="{0.55 if p["glow"] else 1}"/></g>')
-    return y + bar + vh
+    return (f'<g class="{page}"><use href="#{shot_id}" x="{x}" y="{y}"/></g>'
+            f'<rect class="{thumb}" x="{x + w - 7:.1f}" y="{y + 3:.1f}" width="4" height="{thumb_h:.1f}" rx="2" '
+            f'fill="#14232a" opacity="0.28"/>')
 
 
 def chips(svg: Svg, items: list[tuple[str, str | None]], x: float, y: float, max_w: float, size: float,
@@ -691,7 +794,7 @@ def project_card(proj: dict, index: int, theme: str, narrow: bool) -> Svg:
     uses = [line.replace('\u00a0', ' ')
             for line in wrap(f'{uses_label} {", ".join(nb)}', 'mono-400', size, col_w)] if nb else []
     bar = 26 if narrow else 30
-    b_h = bar + bw * SHOT_VIEW / 960
+    b_h = bar + view_h(proj, bw)
     # layout (y relative to the window body)
     head = 26 + size  # prompt baseline
     serve = head + lh
