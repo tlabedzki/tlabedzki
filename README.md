@@ -28,7 +28,7 @@
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/project-pricing-engine-narrow.svg">
-  <img src="assets/project-pricing-engine.svg" width="100%" alt="Project 2 of 2: Pricing-Engine. A new price for every product of Lumo, the shop from Data-Generator, from elasticity estimated on price history and discounts, five competitors&#x27; prices and margin rules. Each price has a one-sentence reason, and the true elasticity checks the result. Methods: price elasticity, empirical Bayes, price index, margin rules, profit scenarios. Stack: Python, pandas, DuckDB, SciPy, Streamlit. Animated preview: its web app (Streamlit) scrolls from the pricing rules and yearly profit to the proposals with their reasons. Link below the card: View project.">
+  <img src="assets/project-pricing-engine.svg" width="100%" alt="Project 2 of 2: Pricing-Engine. A new price for every product of Lumo, the shop from Data-Generator, from elasticity estimated on price history and discounts, five competitors&#x27; prices and margin rules. Each price has a one-sentence reason, and the true elasticity checks the result. Methods: price elasticity, empirical Bayes, price index, margin rules, profit scenarios. Stack: Python, pandas, DuckDB, SciPy, Dash, Plotly. Animated preview: its web app (Dash) scrolls from the pricing rules to the yearly result and the proposals with their reasons. Link below the card: View project.">
 </picture>
 
 <p><a href="https://github.com/tlabedzki/Pricing-Engine"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Pricing-Engine on GitHub"></a></p>

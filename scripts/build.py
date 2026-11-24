@@ -546,16 +546,16 @@ PROJECTS = [
         'uses_label': 'Methods:',  # zlecenie 586: what the engine does, where Data-Generator lists what to practise
         'uses': ['price elasticity', 'empirical Bayes', 'price index', 'margin rules', 'profit scenarios'],
         'stack': [('Python', 'python'), ('pandas', 'pandas'), ('DuckDB', None), ('SciPy', None),
-                  ('Streamlit', 'streamlit')],
+                  ('Dash', None), ('Plotly', 'plotly')],
         'url': 'https://github.com/tlabedzki/Pricing-Engine',
-        'run': 'streamlit run app/streamlit_app.py',
-        'serve': 'URL: http://127.0.0.1:8501',
-        'host': '127.0.0.1:8501',
-        # shot taken 1100 CSS px wide (at 960 the metrics are cut to "8.0…"), so stops are in 960 px units
+        'run': 'python -m ui.app',
+        'serve': 'Dash is running on http://127.0.0.1:8050/',
+        'host': '127.0.0.1:8050',
+        # v1.1.0 (Dash and Mantine, the Data-Generator look; zlecenie 589): shot at 960 CSS px like Data-Generator
         'shot': 'pricing-engine.webp',
-        'stops': [0, 260],
-        'rest': 0,
-        'shot_alt': 'its web app (Streamlit) scrolls from the pricing rules and yearly profit to the proposals '
+        'stops': [0, 490, 1010],
+        'rest': 1010,
+        'shot_alt': 'its web app (Dash) scrolls from the pricing rules to the yearly result and the proposals '
                     'with their reasons',
     },
 ]
