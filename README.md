@@ -21,24 +21,31 @@
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/project-data-generator-narrow.svg">
-  <img src="assets/project-data-generator.svg" width="100%" alt="Project 1 of 3: Data-Generator. A fully fictional Polish online shop in 15 linked tables, from orders, reviews and the prices of five competitors to web sessions, returns and A/B tests. Truth columns, down to the true churn date, let you check your analysis, and 75 realism criteria pass. Practise: sales forecasting, cohorts and churn, market basket, campaign ROAS, cancellations, ratings, price index, A/B tests. Stack: Python, pandas, NumPy, Dash, Plotly. Animated preview: its web app (Dash) scrolls from the parameters through the data preview to the charts. Link below the card: View project.">
+  <img src="assets/project-data-generator.svg" width="100%" alt="Project 1 of 4: Data-Generator. A fully fictional Polish online shop in 15 linked tables, from orders, reviews and the prices of five competitors to web sessions, returns and A/B tests. Truth columns, down to the true churn date, let you check your analysis, and 75 realism criteria pass. Practise: sales forecasting, cohorts and churn, market basket, campaign ROAS, cancellations, ratings, price index, A/B tests. Stack: Python, pandas, NumPy, Dash, Plotly. Animated preview: its web app (Dash) scrolls from the parameters through the data preview to the charts. Link below the card: View project.">
 </picture>
 
 <p><a href="https://github.com/tlabedzki/Data-Generator"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Data-Generator on GitHub"></a></p>
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/project-pricing-engine-narrow.svg">
-  <img src="assets/project-pricing-engine.svg" width="100%" alt="Project 2 of 3: Pricing-Engine. A new price for every product of Lumo, the shop from Data-Generator, from elasticity estimated on price history and discounts, five competitors&#x27; prices and margin rules. Each price has a one-sentence reason, and the true elasticity checks the result. Methods: price elasticity, empirical Bayes, price index, margin rules, profit scenarios. Stack: Python, pandas, DuckDB, SciPy, Dash, Plotly. Animated preview: its web app (Dash) at work. The cursor drags the competitor limit from +5% to +10% and the largest price step from 10% to 15%, the yearly gross profit grows from 8.33M to 8.66M PLN, then the page scrolls to the lowered prices and the profit change per category. Link below the card: View project.">
+  <img src="assets/project-pricing-engine.svg" width="100%" alt="Project 2 of 4: Pricing-Engine. A new price for every product of Lumo, the shop from Data-Generator, from elasticity estimated on price history and discounts, five competitors&#x27; prices and margin rules. Each price has a one-sentence reason, and the true elasticity checks the result. Methods: price elasticity, empirical Bayes, price index, margin rules, profit scenarios. Stack: Python, pandas, DuckDB, SciPy, Dash, Plotly. Animated preview: its web app (Dash) at work. The cursor drags the competitor limit from +5% to +10% and the largest price step from 10% to 15%, the yearly gross profit grows from 8.33M to 8.66M PLN, then the page scrolls to the lowered prices and the profit change per category. Link below the card: View project.">
 </picture>
 
 <p><a href="https://github.com/tlabedzki/Pricing-Engine"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Pricing-Engine on GitHub"></a></p>
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/project-product-profitability-narrow.svg">
-  <img src="assets/project-product-profitability.svg" width="100%" alt="Project 3 of 3: Product-Profitability. The true margin of every product of Lumo, the shop from Data-Generator, after discounts, returns, shipping, payment fees and affiliate commission, reconciled to the grosz. Each loss-making bestseller gets a reason and a move: change the price, end free delivery or delist. Methods: cost allocation, margin cascade, reconciliation, decision rules, SQL in DuckDB. Stack: Python, SQL, DuckDB, pandas, Dash, Plotly. Animated preview: its web app (Dash) at work. The bestseller slider moves from the top 500 to the top 200, the loss-making bestsellers go from 44 to 20 and their loss from -73.0k to -34.0k PLN, then a click on a product in the table opens its card with its margin cascade and order list. Link below the card: View project.">
+  <img src="assets/project-product-profitability.svg" width="100%" alt="Project 3 of 4: Product-Profitability. The true margin of every product of Lumo, the shop from Data-Generator, after discounts, returns, shipping, payment fees and affiliate commission, reconciled to the grosz. Each loss-making bestseller gets a reason and a move: change the price, end free delivery or delist. Methods: cost allocation, margin cascade, reconciliation, decision rules, SQL in DuckDB. Stack: Python, SQL, DuckDB, pandas, Dash, Plotly. Animated preview: its web app (Dash) at work. The bestseller slider moves from the top 500 to the top 200, the loss-making bestsellers go from 44 to 20 and their loss from -73.0k to -34.0k PLN, then a click on a product in the table opens its card with its margin cascade and order list. Link below the card: View project.">
 </picture>
 
 <p><a href="https://github.com/tlabedzki/Product-Profitability"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Product-Profitability on GitHub"></a></p>
+
+<picture>
+  <source media="(max-width: 600px)" srcset="assets/project-sales-anomalies-narrow.svg">
+  <img src="assets/project-sales-anomalies.svg" width="100%" alt="Project 4 of 4: Sales-Anomalies. A daily check of Lumo, the shop from Data-Generator, for unusual days in sales, margin, returns, costs and conversion in 112 segments. Each anomaly is split into causes in PLN that add up to the grosz and summed up in one sentence for the manager. Methods: Poisson forecast, z-scores, margin bridge, LMDI split, answer-key grading. Stack: Python, pandas, NumPy, DuckDB, Dash, Plotly. Animated preview: its web app (Dash) at work. A timeline of 27 anomalies in 2023-2024, then a click on the Clothing dot (15-24 July 2023) opens the note for the manager and the change of +157,553 PLN in the cost of returns split into causes that add up exactly, then back to the timeline. Link below the card: View project.">
+</picture>
+
+<p><a href="https://github.com/tlabedzki/Sales-Anomalies"><img src="assets/view-project.svg" width="216" height="56" alt="View project: Sales-Anomalies on GitHub"></a></p>
 
 <picture>
   <source media="(max-width: 600px)" srcset="assets/activity-narrow.svg">
