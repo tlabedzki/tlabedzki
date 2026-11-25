@@ -589,6 +589,30 @@ PROJECTS = [
                     'the loss-making bestsellers go from 44 to 20 and their loss from -73.0k to -34.0k PLN, '
                     'then a click on a product in the table opens its card with its margin cascade and order list',
     },
+    {
+        'name': 'Sales-Anomalies',
+        'slug': 'sales-anomalies',
+        'desc': 'A daily check of Lumo, the shop from Data-Generator, for unusual days in sales, margin, returns, '
+                'costs and conversion in 112 segments. Each anomaly is split into causes in PLN that add up to the '
+                'grosz and summed up in one sentence for the manager.',
+        'uses_label': 'Methods:',
+        'uses': ['Poisson forecast', 'z-scores', 'margin bridge', 'LMDI split', 'answer-key grading'],
+        'stack': [('Python', 'python'), ('pandas', 'pandas'), ('NumPy', 'numpy'), ('DuckDB', None),
+                  ('Dash', None), ('Plotly', 'plotly')],
+        'url': 'https://github.com/tlabedzki/Sales-Anomalies',
+        'run': 'python -m ui.app',
+        'serve': 'Dash is running on http://127.0.0.1:8050/',
+        'host': '127.0.0.1:8050',
+        # zlecenie 608: docs/img/app-demo.svg from tag v1.0.0 of Sales-Anomalies, unchanged (app-demo-dark.svg differs
+        # only in the demo's own browser bar, which the card drops): the timeline of anomalies, a click on a dot opens
+        # the note for the manager and the change split into causes, then back to the timeline.
+        'demo': 'sales-anomalies-demo.svg',
+        'crop': (0, 0, 1000, 666.67),
+        'final': 0.58,  # the note for the manager above the bridge of causes, a hold of the loop
+        'shot_alt': 'its web app (Dash) at work. A timeline of 27 anomalies in 2023-2024, then a click on the '
+                    'Clothing dot (15-24 July 2023) opens the note for the manager and the change of +157,553 PLN '
+                    'in the cost of returns split into causes that add up exactly, then back to the timeline',
+    },
 ]
 SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
 BUTTON = 'view-project'
@@ -688,7 +712,9 @@ def demo_page(svg: Svg, proj: dict, x: float, y: float, w: float, delay: float) 
     shadow = re.search(r'<filter id="shadow".*?</filter>', src, re.S).group(0).replace('id="shadow"', f'id="{pre}shadow"')
     svg.defs.append(shadow + ''.join(images))
     # reduced motion: every class at the final point of the loop (a hold, not mid-drag), the cursor stays hidden
-    cursor = set(re.findall(r'<g class="(m\d+)"><g class="(m\d+)"><g class="(m\d+)"><path d="M0 0V', src)[0])
+    # the cursor arrow sits in two (Sales-Anomalies) or three (Pricing-Engine, Product-Profitability) nested groups
+    cursor = {c for chain in re.findall(r'((?:<g class="m\d+">)+)<path d="M0 0V', src) for c in re.findall(r'm\d+', chain)}
+    assert cursor, 'demo layout changed: cursor not found'
     cursor |= {c for pair in re.findall(r'<g class="(m\d+)"><circle class="(m\d+)" r="18"', src) for c in pair}
     still = []
     for name, body in re.findall(r'@keyframes (m\d+)\{(.*?\})\}', src):
