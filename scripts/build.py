@@ -637,6 +637,31 @@ PROJECTS = [
                     'the page scrolls to the raw files, which would overstate net revenue by 70%, a switch shows '
                     'gross margin understated by 30%, then back to the top',
     },
+    {
+        'name': 'Purchase-Planner',
+        'slug': 'purchase-planner',
+        'desc': 'A 30-day purchase plan for the 24 suppliers of Lumo, the shop from Data-Generator, with a reason '
+                'on every line and an Excel order per supplier. Replayed on all of 2024, it serves 97.2% of demand '
+                '(the buyer ordering by eye 93.0%) with 12% less stock on average.',
+        'uses_label': 'Methods:',
+        'uses': ['Poisson regression', 'TSB forecast', 'order-up-to policy', 'stock budget', 'backtest'],
+        'stack': [('Python', 'python'), ('pandas', 'pandas'), ('NumPy', 'numpy'), ('SciPy', None),
+                  ('Dash', None), ('Plotly', 'plotly')],
+        'url': 'https://github.com/tlabedzki/Purchase-Planner',
+        'run': 'python -m ui.app',
+        'serve': 'Dash is running on http://127.0.0.1:8050/',
+        'host': '127.0.0.1:8050',
+        # zlecenie 668: docs/img/app-demo.svg from tag v1.0.0 of Purchase-Planner, unchanged (app-demo-dark.svg
+        # differs only in the demo's own browser bar, which the card drops). Its page window is 625 px tall, the 3:2
+        # crop shows 42 px more of the scrolled page below it.
+        'demo': 'purchase-planner-demo.svg',
+        'crop': (0, 0, 1000, 666.67),
+        'final': 0.06,  # the 2024 backtest at the top: 97.2% of demand served, 917 k PLN less stock, a hold of the loop
+        'shot_alt': "its web app (Dash) at work. The 2024 backtest (97.2% of demand served, 917k PLN less stock "
+                    "than the shop's buyer), then the page scrolls to the plan of the largest supplier with a reason "
+                    'on every line, a click downloads its Excel order, then the chart of one product with its stock, '
+                    'forecast and planned deliveries, then back to the top',
+    },
 ]
 SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
 BUTTON = 'view-project'
@@ -737,10 +762,13 @@ def demo_page(svg: Svg, proj: dict, x: float, y: float, w: float, delay: float) 
     svg.defs.append(shadow + ''.join(images))
     # reduced motion: every class at the final point of the loop (a hold, not mid-drag), the cursor stays hidden
     # the cursor arrow sits in two (Sales-Anomalies) or three (Pricing-Engine, Product-Profitability) nested groups
-    cursor = {c for chain in re.findall(r'((?:<g class="m\d+">)+)<path d="M0 0V', src) for c in re.findall(r'm\d+', chain)}
-    assert cursor, 'demo layout changed: cursor not found'
-    cursor |= {c for pair in re.findall(r'<g class="(m\d+)"><circle class="(m\d+)" r="18"', src) for c in pair}
+    arrow = [c for chain in re.findall(r'((?:<g class="m\d+">)+)<path d="M0 0V', src) for c in re.findall(r'm\d+', chain)]
+    assert arrow, 'demo layout changed: cursor not found'
+    cursor = set(arrow) | {c for pair in re.findall(r'<g class="(m\d+)"><circle class="(m\d+)" r="18"', src) for c in pair}
     still = []
+    # without its own fade group (Purchase-Planner) the arrow would stay on screen at its start point: hide it
+    if not any(re.search(rf'\.{c}\{{opacity:0;', src) for c in arrow):
+        still.append(f'.{pre}{arrow[0]}{{opacity:0}}')
     for name, body in re.findall(r'@keyframes (m\d+)\{(.*?\})\}', src):
         if name in cursor:
             continue
