@@ -613,6 +613,30 @@ PROJECTS = [
                     'Clothing dot (15-24 July 2023) opens the note for the manager and the change of +157,553 PLN '
                     'in the cost of returns split into causes that add up exactly, then back to the timeline',
     },
+    {
+        'name': 'Shop-Data-Warehouse',
+        'slug': 'shop-data-warehouse',
+        'desc': 'The data warehouse of Lumo, the shop from Data-Generator: daily CSV files loaded into DuckDB, dbt '
+                'models in a star schema and a daily Airflow DAG. Checked against an answer key, it finds all 13,451 '
+                'injected quality issues and fixes 8,958.',
+        'uses_label': 'Methods:',
+        'uses': ['cleaning rules', 'dbt tests', 'SCD2', 'incremental loads', 'answer-key grading'],
+        'stack': [('Python', 'python'), ('DuckDB', None), ('dbt', None), ('Airflow', 'apacheairflow'),
+                  ('Dash', None), ('Plotly', 'plotly')],
+        'url': 'https://github.com/tlabedzki/Shop-Data-Warehouse',
+        'run': 'python -m ui.app',
+        'serve': 'Dash is running on http://127.0.0.1:8050/',
+        'host': '127.0.0.1:8050',
+        # zlecenie 656: docs/img/app-demo.svg from tag v1.0.0 of Shop-Data-Warehouse, unchanged (app-demo-dark.svg
+        # differs only in the demo's own browser bar, which the card drops). Its page is 854 px tall, so the crop starts
+        # lower: the 3:2 window keeps the bar chart and the whole revenue chart, the section titles stay above it.
+        'demo': 'shop-data-warehouse-demo.svg',
+        'crop': (0, 158, 1000, 666.67),
+        'final': 0.50,  # the raw files against the warehouse, gross margin understated by 30%, a hold of the loop
+        'shot_alt': 'its web app (Dash) at work. The chart of 13,451 injected issues narrows to order lines, then '
+                    'the page scrolls to the raw files, which would overstate net revenue by 70%, a switch shows '
+                    'gross margin understated by 30%, then back to the top',
+    },
 ]
 SHOT_VIEW = 600  # CSS px of the app page visible in the browser frame (at 960 CSS px wide)
 BUTTON = 'view-project'
